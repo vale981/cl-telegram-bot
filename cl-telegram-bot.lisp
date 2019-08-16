@@ -103,11 +103,10 @@
     ;;   (error 'request-error :what (format nil "request to ~A returned ~A (~A)" name status reason)))
     (with-slots (ok result description) (decode message)
       (if ok
-          (if return-type
+          (if return-type               ; wether to cast into a known custom class or not
               (recursive-change-class result return-type)
               result)
-          (error 'request-error :what description)
-          ))))
+          (error 'request-error :what description)))))
 
 (defun access (update &rest args)
   "Access update field. update.first.second. ... => (access update 'first 'second ...). Nil if unbound."
@@ -183,18 +182,15 @@
 (defun get-updates (b &key limit timeout)
   "https://core.telegram.org/bots/api#getupdates"
   (let* ((current-id (id b))
-         (request    (decode (make-request b "getUpdates"
-                                           (list (cons :offset current-id)
-                                                 (cons :limit limit)
-                                                 (cons :timeout timeout))
-                                           :streamp t)))
-         (results (slot-value request (find-json-symbol :result))))
-    (when (eql (slot-value request (find-json-symbol :ok)) nil)
-      (error 'request-error :what request))
+         (results (make-request b "getUpdates"
+                                `(,(cons :offset current-id)
+                                  ,(when limit `(cons :limit ,limit))
+                                  ,(when timeout `(cons :limit ,timeout)))
+                                :streamp t
+                                :return-type '*UPDATE)))
     (when (> (length results) 0)
       (let* ((last-update (elt results (- (length results) 1)))
-             (id (slot-value last-update (find-json-symbol :update--id))))
-        (when (= current-id 0)
-          (setf (id b) id))
-        (incf (id b))))
+             (id (tg-update--id last-update)))
+        (setf (id b) id)
+        (incf (id b) 1)))
     results))
