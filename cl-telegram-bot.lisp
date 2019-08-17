@@ -69,20 +69,22 @@
           (sb-mop:class-slots
            (class-of obj))))
 
-(defun recursive-change-class (object top-level-class)
+(defun recursive-change-class (object class)
   "Casts and object and its members into the telegram specific classes."
   (when (arrayp object)
     (return-from recursive-change-class
       (map 'vector #'(lambda (value)
-                       (recursive-change-class value top-level-class))
+                       (recursive-change-class value class))
            object)))
-
-  (change-class object top-level-class)
-  (dolist (slot (c2mop:class-direct-slots (find-class top-level-class)))
+  (change-class object class)
+  (dolist (slot (c2mop:class-slots (find-class class)))
     (let* ((name (c2mop:slot-definition-name slot))
            (type (c2mop:slot-definition-type slot)))
       (when (slot-boundp object name)
         (let ((value (slot-value object name)))
+          (when (and (listp type) (> (length type) 1) (eq (car type) 'array))
+            (setf type (second type)))
+          (print (list name value type))
           (when (and value (find type *api-types*))
             (recursive-change-class value type))))))
   object)
@@ -90,20 +92,19 @@
 (defun make-request (b name options &key (streamp nil) (return-type nil))
   "Perform HTTP request to 'name API method with 'options JSON-encoded object."
   (let* ((results (multiple-value-list
-                   (drakma:http-request
-                    (concatenate 'string (endpoint b) name)
-                    :method :post
-                    :want-stream streamp
-                    :content-type "application/json"
-                    :content (json:encode-json-alist-to-string options))))
-         (status (cadr results))
-         (reason (car (last results)))
+                   (handler-bind ((dex:http-request-bad-request #'dex:ignore-and-continue))
+                     (dex:request
+                      (concatenate 'string (endpoint b) name)
+                      :method :post
+                      :want-stream streamp
+                      :headers '(("Content-Type" . "Application/Json"))
+                      :content (json:encode-json-alist-to-string options)))))
          (message (nth 0 results)))
     ;; (when (<= 400 status 599)
     ;;   (error 'request-error :what (format nil "request to ~A returned ~A (~A)" name status reason)))
     (with-slots (ok result description) (decode message)
       (if ok
-          (if return-type               ; wether to cast into a known custom class or not
+          (if return-type ; wether to cast into a known custom class or not
               (recursive-change-class result return-type)
               result)
           (error 'request-error :what description)))))
@@ -131,15 +132,17 @@
 (defgeneric decode (object))
 
 (defmethod decode ((object stream))
-  (json:with-decoder-simple-clos-semantics
-    (prog1
-        (json:decode-json object)
-      (close object))))
+  (let ((json:*json-symbols-package* nil))
+    (json:with-decoder-simple-clos-semantics
+      (prog1
+          (json:decode-json object)
+        (close object)))))
 
 (defmethod decode ((object string))
-  (json:with-decoder-simple-clos-semantics
-   (with-input-from-string (stream object)
-                           (json:decode-json stream))))
+  (let ((json:*json-symbols-package* nil))
+    (json:with-decoder-simple-clos-semantics
+      (with-input-from-string (stream object)
+        (json:decode-json stream)))))
 
 (defmethod decode ((object vector))
   (decode (map 'string #'code-char object)))
@@ -152,8 +155,6 @@
 (defmacro find-json-symbol (sym)
   `(find-symbol (symbol-name ,sym) json:*json-symbols-package*))
 
-(defmacro trace-http ()
-  '(setf drakma:*header-stream* *standard-output*))
 
 (defun download-file (b file-id)
   "Get the  path for a  file from a  file-id (see: get-file)  and then
@@ -167,7 +168,7 @@
                                                (uri       (concatenate 'string (file-endpoint b) path))
                                                (extension (cl-ppcre:scan-to-strings "\\..*$" path)))
                                               (multiple-value-bind (body code headers)
-                                                  (drakma:http-request uri :method :get)
+                                                  (dex:get uri)
                                                 (when (= code +http-ok+)
                                                   (values body headers extension))))))))
 
@@ -179,6 +180,10 @@
          (progn ,@body)
        nil)))
 
+(defun get-latest-update-id (updates)
+  "Finds the latest update id from a sequence of updates."
+  (reduce #'max updates :key #'tg-update--id :from-end t))
+
 (defun get-updates (b &key limit timeout)
   "https://core.telegram.org/bots/api#getupdates"
   (let* ((current-id (id b))
@@ -189,8 +194,7 @@
                                 :streamp t
                                 :return-type '*UPDATE)))
     (when (> (length results) 0)
-      (let* ((last-update (elt results (- (length results) 1)))
-             (id (tg-update--id last-update)))
+      (let ((id (get-latest-update-id results)))
         (setf (id b) id)
         (incf (id b) 1)))
     results))
