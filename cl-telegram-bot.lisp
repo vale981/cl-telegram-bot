@@ -71,21 +71,25 @@
 
 (defun recursive-change-class (object class)
   "Casts and object and its members into the telegram specific classes."
+  (when (and (listp class) (> (length class) 1) (eq (car class) 'array))
+    (setf class (second class)))
+
+  (unless (find class *api-types*)
+    (return-from recursive-change-class object))
+
   (when (arrayp object)
     (return-from recursive-change-class
       (map 'vector #'(lambda (value)
                        (recursive-change-class value class))
            object)))
+
   (change-class object class)
   (dolist (slot (c2mop:class-slots (find-class class)))
     (let* ((name (c2mop:slot-definition-name slot))
            (type (c2mop:slot-definition-type slot)))
       (when (slot-boundp object name)
         (let ((value (slot-value object name)))
-          (when (and (listp type) (> (length type) 1) (eq (car type) 'array))
-            (setf type (second type)))
-          (print (list name value type))
-          (when (and value (find type *api-types*))
+          (when value
             (recursive-change-class value type))))))
   object)
 
