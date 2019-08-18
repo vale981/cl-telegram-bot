@@ -72,12 +72,12 @@
     (setf endpoint      (concatenate 'string api-uri "bot" token "/")
           file-endpoint (concatenate 'string api-uri "file/" "bot" token "/"))))
 
-(defgeneric add-reply-fetcher (bot fetcher)
+(defgeneric add-reply-fetcher (bot fetcher result)
   (:documentation "Adds a reply fetcher function that takes one argument of type *UPDATE and returns T if the update is the desired reply. Returns a PROMISE."))
 
-(defmethod add-reply-fetcher ((bot bot) fetcher)
+(defmethod add-reply-fetcher ((bot bot) fetcher result)
   (let ((promise (lparallel:promise)))
-    (push `(,promise . ,fetcher) (slot-value bot 'reply-queue))
+    (push `(,promise ,fetcher ,result) (slot-value bot 'reply-queue))
     promise))
 
 (defgeneric process-updates (bot updates)
@@ -91,10 +91,11 @@
   (with-slots (reply-queue) bot         ; Process reply-fetchers
     (let ((unresolved nil))
       (loop for update across updates do
-        (dolist (fetcher-cons reply-queue)
-          (if (funcall (cdr fetcher-cons) update)
-              (lparallel:fulfill (car fetcher-cons) update)
-              (push fetcher-cons unresolved))))
+        (dolist (fetcher-list reply-queue)
+          (let ((reply (apply (second fetcher-list) (list update (third fetcher-list)))))
+            (if reply
+                (lparallel:fulfill (first fetcher-list) reply)
+                (push fetcher-list unresolved)))))
       (setf reply-queue unresolved))))
 
 (defun make-bot (token)
@@ -244,7 +245,9 @@
       (let ((id (get-latest-update-id results)))
         (setf (id b) id)
         (incf (id b) 1)))
-    (process-updates b results)
+
+    (when (> (length results) 0)
+      (process-updates b results))
     results))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -275,9 +278,6 @@
   "Generate a call to MAKE-REQUEST."
   `(apply #'make-request (cons ,bot (,method ,@args))))
 
-(defun make-$-reply-fetcher (bot reply-fetcher)
-  `(add-reply-fetcher ,bot ,(cdr reply-fetcher)))
-
 (defmacro $* ((method &rest args) &body body)
   "Call api method with standard BOT and RESULT-VAR. See $."
   `($ (,method ,@args) () ,@body))
@@ -288,14 +288,17 @@
   "Call an API method. If a body is given the result of the call will be bound to RETURN-VAR and the body will be included. Subsequent calls to $ can be inlined like ($ ... FORMS (:INLINE $ ...) FORMS*) => ($ ... FORMS ($ ... FORMS*))."
   (when (not (find method *api-methods*)) (error "No such API method."))
   (let ((return-val-sym (gensym)))
-    `(let ((,return-val-sym ,(if parallel
+    `(let* ((,return-val-sym ,(if parallel
                                 `(lparallel:future ,(make-$-method-call method bot args))
                                 (make-$-method-call method bot args)))
           ,@(when with-reply
              (check-type with-reply cons)
              `((,(car with-reply)
-                ,(make-$-reply-fetcher bot with-reply)
-                ))))
+                ,(if parallel
+                     `(lparallel:future
+                        (lparallel:force
+                         (add-reply-fetcher ,bot ,(cdr with-reply) (lparallel:force ,return-val-sym))))
+                     `(add-reply-fetcher ,bot ,(cdr with-reply) ,return-val-sym))))))
       ,(make-optional-body body return-var return-val-sym))))
 
 
