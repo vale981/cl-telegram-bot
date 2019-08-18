@@ -1,5 +1,4 @@
 ; DO NOT EDIT, AUTO GENERATED
-
 (IN-PACKAGE :CL-TELEGRAM-BOT)
 (DEFPARAMETER *API-TYPES*
   '(*UPDATE *WEBHOOK-INFO *USER *CHAT *MESSAGE *MESSAGE-ENTITY *PHOTO-SIZE
@@ -30,6 +29,25 @@
     *PASSPORT-ELEMENT-ERROR-TRANSLATION-FILE
     *PASSPORT-ELEMENT-ERROR-TRANSLATION-FILES
     *PASSPORT-ELEMENT-ERROR-UNSPECIFIED *GAME *GAME-HIGH-SCORE))
+(DEFPARAMETER *API-METHODS*
+  '(GET-UPDATES SET-WEBHOOK DELETE-WEBHOOK GET-WEBHOOK-INFO GET-ME SEND-MESSAGE
+    FORWARD-MESSAGE SEND-PHOTO SEND-AUDIO SEND-DOCUMENT SEND-VIDEO
+    SEND-ANIMATION SEND-VOICE SEND-VIDEO-NOTE SEND-MEDIA-GROUP SEND-LOCATION
+    EDIT-MESSAGE-LIVE-LOCATION STOP-MESSAGE-LIVE-LOCATION SEND-VENUE
+    SEND-CONTACT SEND-POLL SEND-CHAT-ACTION GET-USER-PROFILE-PHOTOS GET-FILE
+    KICK-CHAT-MEMBER UNBAN-CHAT-MEMBER RESTRICT-CHAT-MEMBER PROMOTE-CHAT-MEMBER
+    SET-CHAT-PERMISSIONS EXPORT-CHAT-INVITE-LINK SET-CHAT-PHOTO
+    DELETE-CHAT-PHOTO SET-CHAT-TITLE SET-CHAT-DESCRIPTION PIN-CHAT-MESSAGE
+    UNPIN-CHAT-MESSAGE LEAVE-CHAT GET-CHAT GET-CHAT-ADMINISTRATORS
+    GET-CHAT-MEMBERS-COUNT GET-CHAT-MEMBER SET-CHAT-STICKER-SET
+    DELETE-CHAT-STICKER-SET ANSWER-CALLBACK-QUERY EDIT-MESSAGE-TEXT
+    EDIT-MESSAGE-CAPTION EDIT-MESSAGE-MEDIA EDIT-MESSAGE-REPLY-MARKUP STOP-POLL
+    DELETE-MESSAGE SEND-STICKER GET-STICKER-SET UPLOAD-STICKER-FILE
+    CREATE-NEW-STICKER-SET ADD-STICKER-TO-SET SET-STICKER-POSITION-IN-SET
+    DELETE-STICKER-FROM-SET ANSWER-INLINE-QUERY *INLINE-QUERY-RESULT
+    *INPUT-MESSAGE-CONTENT SET-PASSPORT-DATA-ERRORS *PASSPORT-ELEMENT-ERROR
+    SEND-GAME SET-GAME-SCORE GET-GAME-HIGH-SCORES))
+
 ;----Getting updates----
 (DEFCLASS *UPDATE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Update")
@@ -68,39 +86,45 @@
           (:DOCUMENTATION "https://core.telegram.org/bots/api#update
 This object represents an incoming update.At most one of the optional parameters can be present in any given update."))
 
-(PROGN
- (DEFGENERIC SET-WEBHOOK
-     (BOT URL &KEY CERTIFICATE MAX--CONNECTIONS ALLOWED--UPDATES)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setwebhook
-Use this method to specify a url and receive incoming updates via an outgoing webhook. Whenever there is an update for the bot, we will send an HTTPS POST request to the specified url, containing a JSON-serialized Update. In case of an unsuccessful request, we will give up after a reasonable amount of attempts. Returns True on success."))
- (DEFMETHOD SET-WEBHOOK
-            ((BOT BOT) URL &KEY CERTIFICATE MAX--CONNECTIONS ALLOWED--UPDATES)
-   (CHECK-TYPE URL STRING)
-   (LET ((OPTIONS (LIST (CONS :URL URL))))
-     (WHEN CERTIFICATE (NCONC OPTIONS (LIST (CONS :CERTIFICATE CERTIFICATE))))
-     (WHEN MAX--CONNECTIONS
-       (NCONC OPTIONS (LIST (CONS :MAX_CONNECTIONS MAX--CONNECTIONS))))
-     (WHEN ALLOWED--UPDATES
-       (NCONC OPTIONS (LIST (CONS :ALLOWED_UPDATES ALLOWED--UPDATES))))
-     (MAKE-REQUEST BOT "setWebhook" OPTIONS))))
+(DEFUN GET-UPDATES (&KEY OFFSET LIMIT TIMEOUT ALLOWED--UPDATES)
+  "https://core.telegram.org/bots/api#getupdates
+Use this method to receive incoming updates using long polling (wiki). An Array of Update objects is returned."
+  (LET ((OPTIONS (LIST)))
+    (WHEN OFFSET (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :OFFSET OFFSET)))))
+    (WHEN LIMIT (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :LIMIT LIMIT)))))
+    (WHEN TIMEOUT
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :TIMEOUT TIMEOUT)))))
+    (WHEN ALLOWED--UPDATES
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :ALLOWED_UPDATES ALLOWED--UPDATES)))))
+    (LIST "getUpdates" OPTIONS :RETURN-TYPE '*UPDATE)))
 
-(PROGN
- (DEFGENERIC DELETE-WEBHOOK
-     (BOT)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#deletewebhook
-Use this method to remove webhook integration if you decide to switch back to getUpdates. Returns True on success. Requires no parameters."))
- (DEFMETHOD DELETE-WEBHOOK ((BOT BOT))
-   (LET ((OPTIONS (LIST)))
-     (MAKE-REQUEST BOT "deleteWebhook" OPTIONS))))
+(DEFUN SET-WEBHOOK (URL &KEY CERTIFICATE MAX--CONNECTIONS ALLOWED--UPDATES)
+  "https://core.telegram.org/bots/api#setwebhook
+Use this method to specify a url and receive incoming updates via an outgoing webhook. Whenever there is an update for the bot, we will send an HTTPS POST request to the specified url, containing a JSON-serialized Update. In case of an unsuccessful request, we will give up after a reasonable amount of attempts. Returns True on success."
+  (CHECK-TYPE URL STRING)
+  (LET ((OPTIONS (LIST (CONS :URL URL))))
+    (WHEN CERTIFICATE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CERTIFICATE CERTIFICATE)))))
+    (WHEN MAX--CONNECTIONS
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :MAX_CONNECTIONS MAX--CONNECTIONS)))))
+    (WHEN ALLOWED--UPDATES
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :ALLOWED_UPDATES ALLOWED--UPDATES)))))
+    (LIST "setWebhook" OPTIONS)))
 
-(PROGN
- (DEFGENERIC GET-WEBHOOK-INFO
-     (BOT)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getwebhookinfo
-Use this method to get current webhook status. Requires no parameters. On success, returns a WebhookInfo object. If the bot is using getUpdates, will return an object with the url field empty."))
- (DEFMETHOD GET-WEBHOOK-INFO ((BOT BOT))
-   (LET ((OPTIONS (LIST)))
-     (MAKE-REQUEST BOT "getWebhookInfo" OPTIONS :RETURN-TYPE '*WEBHOOK-INFO))))
+(DEFUN DELETE-WEBHOOK ()
+  "https://core.telegram.org/bots/api#deletewebhook
+Use this method to remove webhook integration if you decide to switch back to getUpdates. Returns True on success. Requires no parameters."
+  (LET ((OPTIONS (LIST)))
+    (LIST "deleteWebhook" OPTIONS)))
+
+(DEFUN GET-WEBHOOK-INFO ()
+  "https://core.telegram.org/bots/api#getwebhookinfo
+Use this method to get current webhook status. Requires no parameters. On success, returns a WebhookInfo object. If the bot is using getUpdates, will return an object with the url field empty."
+  (LET ((OPTIONS (LIST)))
+    (LIST "getWebhookInfo" OPTIONS :RETURN-TYPE '*WEBHOOK-INFO)))
 
 (DEFCLASS *WEBHOOK-INFO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "WebhookInfo")
@@ -940,830 +964,792 @@ Represents a general file to be sent."))
 
 
 ;----Available methods----
-(PROGN
- (DEFGENERIC GET-ME
-     (BOT)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getme
-A simple method for testing your bot's auth token. Requires no parameters. Returns basic information about the bot in form of a User object."))
- (DEFMETHOD GET-ME ((BOT BOT))
-   (LET ((OPTIONS (LIST)))
-     (MAKE-REQUEST BOT "getMe" OPTIONS :RETURN-TYPE '*USER))))
+(DEFUN GET-ME ()
+  "https://core.telegram.org/bots/api#getme
+A simple method for testing your bot's auth token. Requires no parameters. Returns basic information about the bot in form of a User object."
+  (LET ((OPTIONS (LIST)))
+    (LIST "getMe" OPTIONS :RETURN-TYPE '*USER)))
 
-(PROGN
- (DEFGENERIC SEND-MESSAGE
-     (BOT CHAT--ID TEXT &KEY PARSE--MODE DISABLE--WEB--PAGE--PREVIEW
-      DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendmessage
-Use this method to send text messages. On success, the sent Message is returned."))
- (DEFMETHOD SEND-MESSAGE
-            ((BOT BOT) CHAT--ID TEXT
-             &KEY PARSE--MODE DISABLE--WEB--PAGE--PREVIEW DISABLE--NOTIFICATION
-             REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE TEXT STRING)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :TEXT TEXT))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN DISABLE--WEB--PAGE--PREVIEW
-       (NCONC OPTIONS
-              (LIST
-               (CONS :DISABLE_WEB_PAGE_PREVIEW DISABLE--WEB--PAGE--PREVIEW))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendMessage" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-MESSAGE
+       (CHAT--ID TEXT
+        &KEY PARSE--MODE DISABLE--WEB--PAGE--PREVIEW DISABLE--NOTIFICATION
+        REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendmessage
+Use this method to send text messages. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE TEXT STRING)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :TEXT TEXT))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN DISABLE--WEB--PAGE--PREVIEW
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_WEB_PAGE_PREVIEW
+                            DISABLE--WEB--PAGE--PREVIEW)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendMessage" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC FORWARD-MESSAGE
-     (BOT CHAT--ID FROM--CHAT--ID MESSAGE--ID &KEY DISABLE--NOTIFICATION)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#forwardmessage
-Use this method to forward messages of any kind. On success, the sent Message is returned."))
- (DEFMETHOD FORWARD-MESSAGE
-            ((BOT BOT) CHAT--ID FROM--CHAT--ID MESSAGE--ID
-             &KEY DISABLE--NOTIFICATION)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE FROM--CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE MESSAGE--ID INTEGER)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :FROM_CHAT_ID FROM--CHAT--ID)
-                (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (MAKE-REQUEST BOT "forwardMessage" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN FORWARD-MESSAGE
+       (CHAT--ID FROM--CHAT--ID MESSAGE--ID &KEY DISABLE--NOTIFICATION)
+  "https://core.telegram.org/bots/api#forwardmessage
+Use this method to forward messages of any kind. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE FROM--CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE MESSAGE--ID INTEGER)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :FROM_CHAT_ID FROM--CHAT--ID)
+               (CONS :MESSAGE_ID MESSAGE--ID))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (LIST "forwardMessage" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-PHOTO
-     (BOT CHAT--ID PHOTO &KEY CAPTION PARSE--MODE DISABLE--NOTIFICATION
-      REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendphoto
-Use this method to send photos. On success, the sent Message is returned."))
- (DEFMETHOD SEND-PHOTO
-            ((BOT BOT) CHAT--ID PHOTO
-             &KEY CAPTION PARSE--MODE DISABLE--NOTIFICATION
-             REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE PHOTO (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PHOTO PHOTO))))
-     (WHEN CAPTION (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendPhoto" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-PHOTO
+       (CHAT--ID PHOTO
+        &KEY CAPTION PARSE--MODE DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
+        REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendphoto
+Use this method to send photos. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE PHOTO (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PHOTO PHOTO))))
+    (WHEN CAPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendPhoto" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-AUDIO
-     (BOT CHAT--ID AUDIO &KEY CAPTION PARSE--MODE DURATION PERFORMER TITLE
-      THUMB DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendaudio
-Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .mp3 format. On success, the sent Message is returned. Bots can currently send audio files of up to 50 MB in size, this limit may be changed in the future."))
- (DEFMETHOD SEND-AUDIO
-            ((BOT BOT) CHAT--ID AUDIO
-             &KEY CAPTION PARSE--MODE DURATION PERFORMER TITLE THUMB
-             DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE AUDIO (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :AUDIO AUDIO))))
-     (WHEN CAPTION (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN DURATION (NCONC OPTIONS (LIST (CONS :DURATION DURATION))))
-     (WHEN PERFORMER (NCONC OPTIONS (LIST (CONS :PERFORMER PERFORMER))))
-     (WHEN TITLE (NCONC OPTIONS (LIST (CONS :TITLE TITLE))))
-     (WHEN THUMB (NCONC OPTIONS (LIST (CONS :THUMB THUMB))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendAudio" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-AUDIO
+       (CHAT--ID AUDIO
+        &KEY CAPTION PARSE--MODE DURATION PERFORMER TITLE THUMB
+        DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendaudio
+Use this method to send audio files, if you want Telegram clients to display them in the music player. Your audio must be in the .mp3 format. On success, the sent Message is returned. Bots can currently send audio files of up to 50 MB in size, this limit may be changed in the future."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE AUDIO (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :AUDIO AUDIO))))
+    (WHEN CAPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN DURATION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :DURATION DURATION)))))
+    (WHEN PERFORMER
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PERFORMER PERFORMER)))))
+    (WHEN TITLE (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :TITLE TITLE)))))
+    (WHEN THUMB (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :THUMB THUMB)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendAudio" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-DOCUMENT
-     (BOT CHAT--ID DOCUMENT &KEY THUMB CAPTION PARSE--MODE
-      DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#senddocument
-Use this method to send general files. On success, the sent Message is returned. Bots can currently send files of any type of up to 50 MB in size, this limit may be changed in the future."))
- (DEFMETHOD SEND-DOCUMENT
-            ((BOT BOT) CHAT--ID DOCUMENT
-             &KEY THUMB CAPTION PARSE--MODE DISABLE--NOTIFICATION
-             REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE DOCUMENT (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :DOCUMENT DOCUMENT))))
-     (WHEN THUMB (NCONC OPTIONS (LIST (CONS :THUMB THUMB))))
-     (WHEN CAPTION (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendDocument" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-DOCUMENT
+       (CHAT--ID DOCUMENT
+        &KEY THUMB CAPTION PARSE--MODE DISABLE--NOTIFICATION
+        REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#senddocument
+Use this method to send general files. On success, the sent Message is returned. Bots can currently send files of any type of up to 50 MB in size, this limit may be changed in the future."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE DOCUMENT (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :DOCUMENT DOCUMENT))))
+    (WHEN THUMB (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :THUMB THUMB)))))
+    (WHEN CAPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendDocument" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-VIDEO
-     (BOT CHAT--ID VIDEO &KEY DURATION WIDTH HEIGHT THUMB CAPTION PARSE--MODE
-      SUPPORTS--STREAMING DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
-      REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendvideo
-Use this method to send video files, Telegram clients support mp4 videos (other formats may be sent as Document). On success, the sent Message is returned. Bots can currently send video files of up to 50 MB in size, this limit may be changed in the future."))
- (DEFMETHOD SEND-VIDEO
-            ((BOT BOT) CHAT--ID VIDEO
-             &KEY DURATION WIDTH HEIGHT THUMB CAPTION PARSE--MODE
-             SUPPORTS--STREAMING DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
-             REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE VIDEO (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :VIDEO VIDEO))))
-     (WHEN DURATION (NCONC OPTIONS (LIST (CONS :DURATION DURATION))))
-     (WHEN WIDTH (NCONC OPTIONS (LIST (CONS :WIDTH WIDTH))))
-     (WHEN HEIGHT (NCONC OPTIONS (LIST (CONS :HEIGHT HEIGHT))))
-     (WHEN THUMB (NCONC OPTIONS (LIST (CONS :THUMB THUMB))))
-     (WHEN CAPTION (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN SUPPORTS--STREAMING
-       (NCONC OPTIONS (LIST (CONS :SUPPORTS_STREAMING SUPPORTS--STREAMING))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendVideo" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-VIDEO
+       (CHAT--ID VIDEO
+        &KEY DURATION WIDTH HEIGHT THUMB CAPTION PARSE--MODE
+        SUPPORTS--STREAMING DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
+        REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendvideo
+Use this method to send video files, Telegram clients support mp4 videos (other formats may be sent as Document). On success, the sent Message is returned. Bots can currently send video files of up to 50 MB in size, this limit may be changed in the future."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE VIDEO (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :VIDEO VIDEO))))
+    (WHEN DURATION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :DURATION DURATION)))))
+    (WHEN WIDTH (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :WIDTH WIDTH)))))
+    (WHEN HEIGHT (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :HEIGHT HEIGHT)))))
+    (WHEN THUMB (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :THUMB THUMB)))))
+    (WHEN CAPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN SUPPORTS--STREAMING
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :SUPPORTS_STREAMING SUPPORTS--STREAMING)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendVideo" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-ANIMATION
-     (BOT CHAT--ID ANIMATION &KEY DURATION WIDTH HEIGHT THUMB CAPTION
-      PARSE--MODE DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendanimation
-Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound). On success, the sent Message is returned. Bots can currently send animation files of up to 50 MB in size, this limit may be changed in the future."))
- (DEFMETHOD SEND-ANIMATION
-            ((BOT BOT) CHAT--ID ANIMATION
-             &KEY DURATION WIDTH HEIGHT THUMB CAPTION PARSE--MODE
-             DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE ANIMATION (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :ANIMATION ANIMATION))))
-     (WHEN DURATION (NCONC OPTIONS (LIST (CONS :DURATION DURATION))))
-     (WHEN WIDTH (NCONC OPTIONS (LIST (CONS :WIDTH WIDTH))))
-     (WHEN HEIGHT (NCONC OPTIONS (LIST (CONS :HEIGHT HEIGHT))))
-     (WHEN THUMB (NCONC OPTIONS (LIST (CONS :THUMB THUMB))))
-     (WHEN CAPTION (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendAnimation" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-ANIMATION
+       (CHAT--ID ANIMATION
+        &KEY DURATION WIDTH HEIGHT THUMB CAPTION PARSE--MODE
+        DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendanimation
+Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound). On success, the sent Message is returned. Bots can currently send animation files of up to 50 MB in size, this limit may be changed in the future."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE ANIMATION (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :ANIMATION ANIMATION))))
+    (WHEN DURATION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :DURATION DURATION)))))
+    (WHEN WIDTH (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :WIDTH WIDTH)))))
+    (WHEN HEIGHT (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :HEIGHT HEIGHT)))))
+    (WHEN THUMB (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :THUMB THUMB)))))
+    (WHEN CAPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendAnimation" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-VOICE
-     (BOT CHAT--ID VOICE &KEY CAPTION PARSE--MODE DURATION
-      DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendvoice
-Use this method to send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS (other formats may be sent as Audio or Document). On success, the sent Message is returned. Bots can currently send voice messages of up to 50 MB in size, this limit may be changed in the future."))
- (DEFMETHOD SEND-VOICE
-            ((BOT BOT) CHAT--ID VOICE
-             &KEY CAPTION PARSE--MODE DURATION DISABLE--NOTIFICATION
-             REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE VOICE (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :VOICE VOICE))))
-     (WHEN CAPTION (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN DURATION (NCONC OPTIONS (LIST (CONS :DURATION DURATION))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendVoice" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-VOICE
+       (CHAT--ID VOICE
+        &KEY CAPTION PARSE--MODE DURATION DISABLE--NOTIFICATION
+        REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendvoice
+Use this method to send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS (other formats may be sent as Audio or Document). On success, the sent Message is returned. Bots can currently send voice messages of up to 50 MB in size, this limit may be changed in the future."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE VOICE (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :VOICE VOICE))))
+    (WHEN CAPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN DURATION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :DURATION DURATION)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendVoice" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-VIDEO-NOTE
-     (BOT CHAT--ID VIDEO--NOTE &KEY DURATION LENGTH THUMB DISABLE--NOTIFICATION
-      REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendvideonote
-As of v.4.0, Telegram clients support rounded square mp4 videos of up to 1 minute long. Use this method to send video messages. On success, the sent Message is returned."))
- (DEFMETHOD SEND-VIDEO-NOTE
-            ((BOT BOT) CHAT--ID VIDEO--NOTE
-             &KEY DURATION LENGTH THUMB DISABLE--NOTIFICATION
-             REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE VIDEO--NOTE (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :VIDEO_NOTE VIDEO--NOTE))))
-     (WHEN DURATION (NCONC OPTIONS (LIST (CONS :DURATION DURATION))))
-     (WHEN LENGTH (NCONC OPTIONS (LIST (CONS :LENGTH LENGTH))))
-     (WHEN THUMB (NCONC OPTIONS (LIST (CONS :THUMB THUMB))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendVideoNote" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-VIDEO-NOTE
+       (CHAT--ID VIDEO--NOTE
+        &KEY DURATION LENGTH THUMB DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
+        REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendvideonote
+As of v.4.0, Telegram clients support rounded square mp4 videos of up to 1 minute long. Use this method to send video messages. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE VIDEO--NOTE (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :VIDEO_NOTE VIDEO--NOTE))))
+    (WHEN DURATION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :DURATION DURATION)))))
+    (WHEN LENGTH (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :LENGTH LENGTH)))))
+    (WHEN THUMB (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :THUMB THUMB)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendVideoNote" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-MEDIA-GROUP
-     (BOT CHAT--ID MEDIA &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendmediagroup
-Use this method to send a group of photos or videos as an album. On success, an array of the sent Messages is returned."))
- (DEFMETHOD SEND-MEDIA-GROUP
-            ((BOT BOT) CHAT--ID MEDIA
-             &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE MEDIA (ARRAY (OR *INPUT-MEDIA-PHOTO *INPUT-MEDIA-VIDEO)))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MEDIA MEDIA))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (MAKE-REQUEST BOT "sendMediaGroup" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-MEDIA-GROUP
+       (CHAT--ID MEDIA &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID)
+  "https://core.telegram.org/bots/api#sendmediagroup
+Use this method to send a group of photos or videos as an album. On success, an array of the sent Messages is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE MEDIA (ARRAY (OR *INPUT-MEDIA-PHOTO *INPUT-MEDIA-VIDEO)))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MEDIA MEDIA))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (LIST "sendMediaGroup" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-LOCATION
-     (BOT CHAT--ID LATITUDE LONGITUDE &KEY LIVE--PERIOD DISABLE--NOTIFICATION
-      REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendlocation
-Use this method to send point on the map. On success, the sent Message is returned."))
- (DEFMETHOD SEND-LOCATION
-            ((BOT BOT) CHAT--ID LATITUDE LONGITUDE
-             &KEY LIVE--PERIOD DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
-             REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE LATITUDE FLOAT)
-   (CHECK-TYPE LONGITUDE FLOAT)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :LATITUDE LATITUDE)
-                (CONS :LONGITUDE LONGITUDE))))
-     (WHEN LIVE--PERIOD
-       (NCONC OPTIONS (LIST (CONS :LIVE_PERIOD LIVE--PERIOD))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendLocation" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-LOCATION
+       (CHAT--ID LATITUDE LONGITUDE
+        &KEY LIVE--PERIOD DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
+        REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendlocation
+Use this method to send point on the map. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE LATITUDE FLOAT)
+  (CHECK-TYPE LONGITUDE FLOAT)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :LATITUDE LATITUDE)
+               (CONS :LONGITUDE LONGITUDE))))
+    (WHEN LIVE--PERIOD
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :LIVE_PERIOD LIVE--PERIOD)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendLocation" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC EDIT-MESSAGE-LIVE-LOCATION
-     (BOT LATITUDE LONGITUDE &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID
-      REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#editmessagelivelocation
-Use this method to edit live location messages. A location can be edited until its live_period expires or editing is explicitly disabled by a call to stopMessageLiveLocation. On success, if the edited message was sent by the bot, the edited Message is returned, otherwise True is returned."))
- (DEFMETHOD EDIT-MESSAGE-LIVE-LOCATION
-            ((BOT BOT) LATITUDE LONGITUDE
-             &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE LATITUDE FLOAT)
-   (CHECK-TYPE LONGITUDE FLOAT)
-   (LET ((OPTIONS (LIST (CONS :LATITUDE LATITUDE) (CONS :LONGITUDE LONGITUDE))))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "editMessageLiveLocation" OPTIONS :RETURN-TYPE
-      '*MESSAGE))))
+(DEFUN EDIT-MESSAGE-LIVE-LOCATION
+       (LATITUDE LONGITUDE
+        &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#editmessagelivelocation
+Use this method to edit live location messages. A location can be edited until its live_period expires or editing is explicitly disabled by a call to stopMessageLiveLocation. On success, if the edited message was sent by the bot, the edited Message is returned, otherwise True is returned."
+  (CHECK-TYPE LATITUDE FLOAT)
+  (CHECK-TYPE LONGITUDE FLOAT)
+  (LET ((OPTIONS (LIST (CONS :LATITUDE LATITUDE) (CONS :LONGITUDE LONGITUDE))))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "editMessageLiveLocation" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC STOP-MESSAGE-LIVE-LOCATION
-     (BOT &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#stopmessagelivelocation
-Use this method to stop updating a live location message before live_period expires. On success, if the message was sent by the bot, the sent Message is returned, otherwise True is returned."))
- (DEFMETHOD STOP-MESSAGE-LIVE-LOCATION
-            ((BOT BOT)
-             &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
-   (LET ((OPTIONS (LIST)))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "stopMessageLiveLocation" OPTIONS :RETURN-TYPE
-      '*MESSAGE))))
+(DEFUN STOP-MESSAGE-LIVE-LOCATION
+       (&KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#stopmessagelivelocation
+Use this method to stop updating a live location message before live_period expires. On success, if the message was sent by the bot, the sent Message is returned, otherwise True is returned."
+  (LET ((OPTIONS (LIST)))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "stopMessageLiveLocation" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-VENUE
-     (BOT CHAT--ID LATITUDE LONGITUDE TITLE ADDRESS &KEY FOURSQUARE--ID
-      FOURSQUARE--TYPE DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
-      REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendvenue
-Use this method to send information about a venue. On success, the sent Message is returned."))
- (DEFMETHOD SEND-VENUE
-            ((BOT BOT) CHAT--ID LATITUDE LONGITUDE TITLE ADDRESS
-             &KEY FOURSQUARE--ID FOURSQUARE--TYPE DISABLE--NOTIFICATION
-             REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE LATITUDE FLOAT)
-   (CHECK-TYPE LONGITUDE FLOAT)
-   (CHECK-TYPE TITLE STRING)
-   (CHECK-TYPE ADDRESS STRING)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :LATITUDE LATITUDE)
-                (CONS :LONGITUDE LONGITUDE) (CONS :TITLE TITLE)
-                (CONS :ADDRESS ADDRESS))))
-     (WHEN FOURSQUARE--ID
-       (NCONC OPTIONS (LIST (CONS :FOURSQUARE_ID FOURSQUARE--ID))))
-     (WHEN FOURSQUARE--TYPE
-       (NCONC OPTIONS (LIST (CONS :FOURSQUARE_TYPE FOURSQUARE--TYPE))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendVenue" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-VENUE
+       (CHAT--ID LATITUDE LONGITUDE TITLE ADDRESS
+        &KEY FOURSQUARE--ID FOURSQUARE--TYPE DISABLE--NOTIFICATION
+        REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendvenue
+Use this method to send information about a venue. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE LATITUDE FLOAT)
+  (CHECK-TYPE LONGITUDE FLOAT)
+  (CHECK-TYPE TITLE STRING)
+  (CHECK-TYPE ADDRESS STRING)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :LATITUDE LATITUDE)
+               (CONS :LONGITUDE LONGITUDE) (CONS :TITLE TITLE)
+               (CONS :ADDRESS ADDRESS))))
+    (WHEN FOURSQUARE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :FOURSQUARE_ID FOURSQUARE--ID)))))
+    (WHEN FOURSQUARE--TYPE
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :FOURSQUARE_TYPE FOURSQUARE--TYPE)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendVenue" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-CONTACT
-     (BOT CHAT--ID PHONE--NUMBER FIRST--NAME &KEY LAST--NAME VCARD
-      DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendcontact
-Use this method to send phone contacts. On success, the sent Message is returned."))
- (DEFMETHOD SEND-CONTACT
-            ((BOT BOT) CHAT--ID PHONE--NUMBER FIRST--NAME
-             &KEY LAST--NAME VCARD DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
-             REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE PHONE--NUMBER STRING)
-   (CHECK-TYPE FIRST--NAME STRING)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PHONE_NUMBER PHONE--NUMBER)
-                (CONS :FIRST_NAME FIRST--NAME))))
-     (WHEN LAST--NAME (NCONC OPTIONS (LIST (CONS :LAST_NAME LAST--NAME))))
-     (WHEN VCARD (NCONC OPTIONS (LIST (CONS :VCARD VCARD))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendContact" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-CONTACT
+       (CHAT--ID PHONE--NUMBER FIRST--NAME
+        &KEY LAST--NAME VCARD DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
+        REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendcontact
+Use this method to send phone contacts. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE PHONE--NUMBER STRING)
+  (CHECK-TYPE FIRST--NAME STRING)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PHONE_NUMBER PHONE--NUMBER)
+               (CONS :FIRST_NAME FIRST--NAME))))
+    (WHEN LAST--NAME
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :LAST_NAME LAST--NAME)))))
+    (WHEN VCARD (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :VCARD VCARD)))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendContact" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-POLL
-     (BOT CHAT--ID QUESTION OPTIONS &KEY DISABLE--NOTIFICATION
-      REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendpoll
-Use this method to send a native poll. A native poll can't be sent to a private chat. On success, the sent Message is returned."))
- (DEFMETHOD SEND-POLL
-            ((BOT BOT) CHAT--ID QUESTION OPTIONS
-             &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE QUESTION STRING)
-   (CHECK-TYPE OPTIONS (ARRAY STRING))
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :QUESTION QUESTION)
-                (CONS :OPTIONS OPTIONS))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendPoll" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-POLL
+       (CHAT--ID QUESTION OPTIONS
+        &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendpoll
+Use this method to send a native poll. A native poll can't be sent to a private chat. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE QUESTION STRING)
+  (CHECK-TYPE OPTIONS (ARRAY STRING))
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :QUESTION QUESTION)
+               (CONS :OPTIONS OPTIONS))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendPoll" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC SEND-CHAT-ACTION
-     (BOT CHAT--ID ACTION)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendchataction
-Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status). Returns True on success."))
- (DEFMETHOD SEND-CHAT-ACTION ((BOT BOT) CHAT--ID ACTION)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE ACTION STRING)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :ACTION ACTION))))
-     (MAKE-REQUEST BOT "sendChatAction" OPTIONS))))
+(DEFUN SEND-CHAT-ACTION (CHAT--ID ACTION)
+  "https://core.telegram.org/bots/api#sendchataction
+Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status). Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE ACTION STRING)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :ACTION ACTION))))
+    (LIST "sendChatAction" OPTIONS)))
 
-(PROGN
- (DEFGENERIC GET-USER-PROFILE-PHOTOS
-     (BOT USER--ID &KEY OFFSET LIMIT)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getuserprofilephotos
-Use this method to get a list of profile pictures for a user. Returns a UserProfilePhotos object."))
- (DEFMETHOD GET-USER-PROFILE-PHOTOS ((BOT BOT) USER--ID &KEY OFFSET LIMIT)
-   (CHECK-TYPE USER--ID INTEGER)
-   (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID))))
-     (WHEN OFFSET (NCONC OPTIONS (LIST (CONS :OFFSET OFFSET))))
-     (WHEN LIMIT (NCONC OPTIONS (LIST (CONS :LIMIT LIMIT))))
-     (MAKE-REQUEST BOT "getUserProfilePhotos" OPTIONS :RETURN-TYPE
-      '*USER-PROFILE-PHOTOS))))
+(DEFUN GET-USER-PROFILE-PHOTOS (USER--ID &KEY OFFSET LIMIT)
+  "https://core.telegram.org/bots/api#getuserprofilephotos
+Use this method to get a list of profile pictures for a user. Returns a UserProfilePhotos object."
+  (CHECK-TYPE USER--ID INTEGER)
+  (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID))))
+    (WHEN OFFSET (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :OFFSET OFFSET)))))
+    (WHEN LIMIT (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :LIMIT LIMIT)))))
+    (LIST "getUserProfilePhotos" OPTIONS :RETURN-TYPE '*USER-PROFILE-PHOTOS)))
 
-(PROGN
- (DEFGENERIC GET-FILE
-     (BOT FILE--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getfile
-Use this method to get basic info about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size. On success, a File object is returned. The file can then be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>, where <file_path> is taken from the response. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling getFile again."))
- (DEFMETHOD GET-FILE ((BOT BOT) FILE--ID)
-   (CHECK-TYPE FILE--ID STRING)
-   (LET ((OPTIONS (LIST (CONS :FILE_ID FILE--ID))))
-     (MAKE-REQUEST BOT "getFile" OPTIONS :RETURN-TYPE '*FILE))))
+(DEFUN GET-FILE (FILE--ID)
+  "https://core.telegram.org/bots/api#getfile
+Use this method to get basic info about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size. On success, a File object is returned. The file can then be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>, where <file_path> is taken from the response. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling getFile again."
+  (CHECK-TYPE FILE--ID STRING)
+  (LET ((OPTIONS (LIST (CONS :FILE_ID FILE--ID))))
+    (LIST "getFile" OPTIONS :RETURN-TYPE '*FILE)))
 
-(PROGN
- (DEFGENERIC KICK-CHAT-MEMBER
-     (BOT CHAT--ID USER--ID &KEY UNTIL--DATE)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#kickchatmember
-Use this method to kick a user from a group, a supergroup or a channel. In the case of supergroups and channels, the user will not be able to return to the group on their own using invite links, etc., unless unbanned first. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."))
- (DEFMETHOD KICK-CHAT-MEMBER ((BOT BOT) CHAT--ID USER--ID &KEY UNTIL--DATE)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE USER--ID INTEGER)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
-     (WHEN UNTIL--DATE (NCONC OPTIONS (LIST (CONS :UNTIL_DATE UNTIL--DATE))))
-     (MAKE-REQUEST BOT "kickChatMember" OPTIONS))))
+(DEFUN KICK-CHAT-MEMBER (CHAT--ID USER--ID &KEY UNTIL--DATE)
+  "https://core.telegram.org/bots/api#kickchatmember
+Use this method to kick a user from a group, a supergroup or a channel. In the case of supergroups and channels, the user will not be able to return to the group on their own using invite links, etc., unless unbanned first. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE USER--ID INTEGER)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
+    (WHEN UNTIL--DATE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :UNTIL_DATE UNTIL--DATE)))))
+    (LIST "kickChatMember" OPTIONS)))
 
-(PROGN
- (DEFGENERIC UNBAN-CHAT-MEMBER
-     (BOT CHAT--ID USER--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#unbanchatmember
-Use this method to unban a previously kicked user in a supergroup or channel. The user will not return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. Returns True on success."))
- (DEFMETHOD UNBAN-CHAT-MEMBER ((BOT BOT) CHAT--ID USER--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE USER--ID INTEGER)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
-     (MAKE-REQUEST BOT "unbanChatMember" OPTIONS))))
+(DEFUN UNBAN-CHAT-MEMBER (CHAT--ID USER--ID)
+  "https://core.telegram.org/bots/api#unbanchatmember
+Use this method to unban a previously kicked user in a supergroup or channel. The user will not return to the group or channel automatically, but will be able to join via link, etc. The bot must be an administrator for this to work. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE USER--ID INTEGER)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
+    (LIST "unbanChatMember" OPTIONS)))
 
-(PROGN
- (DEFGENERIC RESTRICT-CHAT-MEMBER
-     (BOT CHAT--ID USER--ID PERMISSIONS &KEY UNTIL--DATE)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#restrictchatmember
-Use this method to restrict a user in a supergroup. The bot must be an administrator in the supergroup for this to work and must have the appropriate admin rights. Pass True for all permissions to lift restrictions from a user. Returns True on success."))
- (DEFMETHOD RESTRICT-CHAT-MEMBER
-            ((BOT BOT) CHAT--ID USER--ID PERMISSIONS &KEY UNTIL--DATE)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE USER--ID INTEGER)
-   (CHECK-TYPE PERMISSIONS *CHAT-PERMISSIONS)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID)
-                (CONS :PERMISSIONS PERMISSIONS))))
-     (WHEN UNTIL--DATE (NCONC OPTIONS (LIST (CONS :UNTIL_DATE UNTIL--DATE))))
-     (MAKE-REQUEST BOT "restrictChatMember" OPTIONS))))
+(DEFUN RESTRICT-CHAT-MEMBER (CHAT--ID USER--ID PERMISSIONS &KEY UNTIL--DATE)
+  "https://core.telegram.org/bots/api#restrictchatmember
+Use this method to restrict a user in a supergroup. The bot must be an administrator in the supergroup for this to work and must have the appropriate admin rights. Pass True for all permissions to lift restrictions from a user. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE USER--ID INTEGER)
+  (CHECK-TYPE PERMISSIONS *CHAT-PERMISSIONS)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID)
+               (CONS :PERMISSIONS PERMISSIONS))))
+    (WHEN UNTIL--DATE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :UNTIL_DATE UNTIL--DATE)))))
+    (LIST "restrictChatMember" OPTIONS)))
 
-(PROGN
- (DEFGENERIC PROMOTE-CHAT-MEMBER
-     (BOT CHAT--ID USER--ID &KEY CAN--CHANGE--INFO CAN--POST--MESSAGES
-      CAN--EDIT--MESSAGES CAN--DELETE--MESSAGES CAN--INVITE--USERS
-      CAN--RESTRICT--MEMBERS CAN--PIN--MESSAGES CAN--PROMOTE--MEMBERS)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#promotechatmember
-Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Pass False for all boolean parameters to demote a user. Returns True on success."))
- (DEFMETHOD PROMOTE-CHAT-MEMBER
-            ((BOT BOT) CHAT--ID USER--ID
-             &KEY CAN--CHANGE--INFO CAN--POST--MESSAGES CAN--EDIT--MESSAGES
-             CAN--DELETE--MESSAGES CAN--INVITE--USERS CAN--RESTRICT--MEMBERS
-             CAN--PIN--MESSAGES CAN--PROMOTE--MEMBERS)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE USER--ID INTEGER)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
-     (WHEN CAN--CHANGE--INFO
-       (NCONC OPTIONS (LIST (CONS :CAN_CHANGE_INFO CAN--CHANGE--INFO))))
-     (WHEN CAN--POST--MESSAGES
-       (NCONC OPTIONS (LIST (CONS :CAN_POST_MESSAGES CAN--POST--MESSAGES))))
-     (WHEN CAN--EDIT--MESSAGES
-       (NCONC OPTIONS (LIST (CONS :CAN_EDIT_MESSAGES CAN--EDIT--MESSAGES))))
-     (WHEN CAN--DELETE--MESSAGES
-       (NCONC OPTIONS
-              (LIST (CONS :CAN_DELETE_MESSAGES CAN--DELETE--MESSAGES))))
-     (WHEN CAN--INVITE--USERS
-       (NCONC OPTIONS (LIST (CONS :CAN_INVITE_USERS CAN--INVITE--USERS))))
-     (WHEN CAN--RESTRICT--MEMBERS
-       (NCONC OPTIONS
-              (LIST (CONS :CAN_RESTRICT_MEMBERS CAN--RESTRICT--MEMBERS))))
-     (WHEN CAN--PIN--MESSAGES
-       (NCONC OPTIONS (LIST (CONS :CAN_PIN_MESSAGES CAN--PIN--MESSAGES))))
-     (WHEN CAN--PROMOTE--MEMBERS
-       (NCONC OPTIONS
-              (LIST (CONS :CAN_PROMOTE_MEMBERS CAN--PROMOTE--MEMBERS))))
-     (MAKE-REQUEST BOT "promoteChatMember" OPTIONS))))
+(DEFUN PROMOTE-CHAT-MEMBER
+       (CHAT--ID USER--ID
+        &KEY CAN--CHANGE--INFO CAN--POST--MESSAGES CAN--EDIT--MESSAGES
+        CAN--DELETE--MESSAGES CAN--INVITE--USERS CAN--RESTRICT--MEMBERS
+        CAN--PIN--MESSAGES CAN--PROMOTE--MEMBERS)
+  "https://core.telegram.org/bots/api#promotechatmember
+Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Pass False for all boolean parameters to demote a user. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE USER--ID INTEGER)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
+    (WHEN CAN--CHANGE--INFO
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :CAN_CHANGE_INFO CAN--CHANGE--INFO)))))
+    (WHEN CAN--POST--MESSAGES
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :CAN_POST_MESSAGES CAN--POST--MESSAGES)))))
+    (WHEN CAN--EDIT--MESSAGES
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :CAN_EDIT_MESSAGES CAN--EDIT--MESSAGES)))))
+    (WHEN CAN--DELETE--MESSAGES
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :CAN_DELETE_MESSAGES CAN--DELETE--MESSAGES)))))
+    (WHEN CAN--INVITE--USERS
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :CAN_INVITE_USERS CAN--INVITE--USERS)))))
+    (WHEN CAN--RESTRICT--MEMBERS
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :CAN_RESTRICT_MEMBERS CAN--RESTRICT--MEMBERS)))))
+    (WHEN CAN--PIN--MESSAGES
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :CAN_PIN_MESSAGES CAN--PIN--MESSAGES)))))
+    (WHEN CAN--PROMOTE--MEMBERS
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :CAN_PROMOTE_MEMBERS CAN--PROMOTE--MEMBERS)))))
+    (LIST "promoteChatMember" OPTIONS)))
 
-(PROGN
- (DEFGENERIC SET-CHAT-PERMISSIONS
-     (BOT CHAT--ID PERMISSIONS)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setchatpermissions
-Use this method to set default chat permissions for all members. The bot must be an administrator in the group or a supergroup for this to work and must have the can_restrict_members admin rights. Returns True on success."))
- (DEFMETHOD SET-CHAT-PERMISSIONS ((BOT BOT) CHAT--ID PERMISSIONS)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE PERMISSIONS *CHAT-PERMISSIONS)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PERMISSIONS PERMISSIONS))))
-     (MAKE-REQUEST BOT "setChatPermissions" OPTIONS))))
+(DEFUN SET-CHAT-PERMISSIONS (CHAT--ID PERMISSIONS)
+  "https://core.telegram.org/bots/api#setchatpermissions
+Use this method to set default chat permissions for all members. The bot must be an administrator in the group or a supergroup for this to work and must have the can_restrict_members admin rights. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE PERMISSIONS *CHAT-PERMISSIONS)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PERMISSIONS PERMISSIONS))))
+    (LIST "setChatPermissions" OPTIONS)))
 
-(PROGN
- (DEFGENERIC EXPORT-CHAT-INVITE-LINK
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#exportchatinvitelink
-Use this method to generate a new invite link for a chat; any previously generated link is revoked. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns the new invite link as String on success."))
- (DEFMETHOD EXPORT-CHAT-INVITE-LINK ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "exportChatInviteLink" OPTIONS))))
+(DEFUN EXPORT-CHAT-INVITE-LINK (CHAT--ID)
+  "https://core.telegram.org/bots/api#exportchatinvitelink
+Use this method to generate a new invite link for a chat; any previously generated link is revoked. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns the new invite link as String on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "exportChatInviteLink" OPTIONS)))
 
-(PROGN
- (DEFGENERIC SET-CHAT-PHOTO
-     (BOT CHAT--ID PHOTO)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setchatphoto
-Use this method to set a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."))
- (DEFMETHOD SET-CHAT-PHOTO ((BOT BOT) CHAT--ID PHOTO)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE PHOTO *INPUT-FILE)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PHOTO PHOTO))))
-     (MAKE-REQUEST BOT "setChatPhoto" OPTIONS))))
+(DEFUN SET-CHAT-PHOTO (CHAT--ID PHOTO)
+  "https://core.telegram.org/bots/api#setchatphoto
+Use this method to set a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE PHOTO *INPUT-FILE)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PHOTO PHOTO))))
+    (LIST "setChatPhoto" OPTIONS)))
 
-(PROGN
- (DEFGENERIC DELETE-CHAT-PHOTO
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#deletechatphoto
-Use this method to delete a chat photo. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."))
- (DEFMETHOD DELETE-CHAT-PHOTO ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "deleteChatPhoto" OPTIONS))))
+(DEFUN DELETE-CHAT-PHOTO (CHAT--ID)
+  "https://core.telegram.org/bots/api#deletechatphoto
+Use this method to delete a chat photo. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "deleteChatPhoto" OPTIONS)))
 
-(PROGN
- (DEFGENERIC SET-CHAT-TITLE
-     (BOT CHAT--ID TITLE)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setchattitle
-Use this method to change the title of a chat. Titles can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."))
- (DEFMETHOD SET-CHAT-TITLE ((BOT BOT) CHAT--ID TITLE)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE TITLE STRING)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :TITLE TITLE))))
-     (MAKE-REQUEST BOT "setChatTitle" OPTIONS))))
+(DEFUN SET-CHAT-TITLE (CHAT--ID TITLE)
+  "https://core.telegram.org/bots/api#setchattitle
+Use this method to change the title of a chat. Titles can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE TITLE STRING)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :TITLE TITLE))))
+    (LIST "setChatTitle" OPTIONS)))
 
-(PROGN
- (DEFGENERIC SET-CHAT-DESCRIPTION
-     (BOT CHAT--ID &KEY DESCRIPTION)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setchatdescription
-Use this method to change the description of a group, a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."))
- (DEFMETHOD SET-CHAT-DESCRIPTION ((BOT BOT) CHAT--ID &KEY DESCRIPTION)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN DESCRIPTION (NCONC OPTIONS (LIST (CONS :DESCRIPTION DESCRIPTION))))
-     (MAKE-REQUEST BOT "setChatDescription" OPTIONS))))
+(DEFUN SET-CHAT-DESCRIPTION (CHAT--ID &KEY DESCRIPTION)
+  "https://core.telegram.org/bots/api#setchatdescription
+Use this method to change the description of a group, a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (WHEN DESCRIPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :DESCRIPTION DESCRIPTION)))))
+    (LIST "setChatDescription" OPTIONS)))
 
-(PROGN
- (DEFGENERIC PIN-CHAT-MESSAGE
-     (BOT CHAT--ID MESSAGE--ID &KEY DISABLE--NOTIFICATION)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#pinchatmessage
-Use this method to pin a message in a group, a supergroup, or a channel. The bot must be an administrator in the chat for this to work and must have the ‘can_pin_messages’ admin right in the supergroup or ‘can_edit_messages’ admin right in the channel. Returns True on success."))
- (DEFMETHOD PIN-CHAT-MESSAGE
-            ((BOT BOT) CHAT--ID MESSAGE--ID &KEY DISABLE--NOTIFICATION)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE MESSAGE--ID INTEGER)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (MAKE-REQUEST BOT "pinChatMessage" OPTIONS))))
+(DEFUN PIN-CHAT-MESSAGE (CHAT--ID MESSAGE--ID &KEY DISABLE--NOTIFICATION)
+  "https://core.telegram.org/bots/api#pinchatmessage
+Use this method to pin a message in a group, a supergroup, or a channel. The bot must be an administrator in the chat for this to work and must have the ‘can_pin_messages’ admin right in the supergroup or ‘can_edit_messages’ admin right in the channel. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE MESSAGE--ID INTEGER)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MESSAGE_ID MESSAGE--ID))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (LIST "pinChatMessage" OPTIONS)))
 
-(PROGN
- (DEFGENERIC UNPIN-CHAT-MESSAGE
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#unpinchatmessage
-Use this method to unpin a message in a group, a supergroup, or a channel. The bot must be an administrator in the chat for this to work and must have the ‘can_pin_messages’ admin right in the supergroup or ‘can_edit_messages’ admin right in the channel. Returns True on success."))
- (DEFMETHOD UNPIN-CHAT-MESSAGE ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "unpinChatMessage" OPTIONS))))
+(DEFUN UNPIN-CHAT-MESSAGE (CHAT--ID)
+  "https://core.telegram.org/bots/api#unpinchatmessage
+Use this method to unpin a message in a group, a supergroup, or a channel. The bot must be an administrator in the chat for this to work and must have the ‘can_pin_messages’ admin right in the supergroup or ‘can_edit_messages’ admin right in the channel. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "unpinChatMessage" OPTIONS)))
 
-(PROGN
- (DEFGENERIC LEAVE-CHAT
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#leavechat
-Use this method for your bot to leave a group, supergroup or channel. Returns True on success."))
- (DEFMETHOD LEAVE-CHAT ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "leaveChat" OPTIONS))))
+(DEFUN LEAVE-CHAT (CHAT--ID)
+  "https://core.telegram.org/bots/api#leavechat
+Use this method for your bot to leave a group, supergroup or channel. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "leaveChat" OPTIONS)))
 
-(PROGN
- (DEFGENERIC GET-CHAT
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getchat
-Use this method to get up to date information about the chat (current name of the user for one-on-one conversations, current username of a user, group or channel, etc.). Returns a Chat object on success."))
- (DEFMETHOD GET-CHAT ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "getChat" OPTIONS :RETURN-TYPE '*CHAT))))
+(DEFUN GET-CHAT (CHAT--ID)
+  "https://core.telegram.org/bots/api#getchat
+Use this method to get up to date information about the chat (current name of the user for one-on-one conversations, current username of a user, group or channel, etc.). Returns a Chat object on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "getChat" OPTIONS :RETURN-TYPE '*CHAT)))
 
-(PROGN
- (DEFGENERIC GET-CHAT-ADMINISTRATORS
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getchatadministrators
-Use this method to get a list of administrators in a chat. On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots. If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned."))
- (DEFMETHOD GET-CHAT-ADMINISTRATORS ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "getChatAdministrators" OPTIONS :RETURN-TYPE
-      '*CHAT-MEMBER))))
+(DEFUN GET-CHAT-ADMINISTRATORS (CHAT--ID)
+  "https://core.telegram.org/bots/api#getchatadministrators
+Use this method to get a list of administrators in a chat. On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots. If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "getChatAdministrators" OPTIONS :RETURN-TYPE '*CHAT-MEMBER)))
 
-(PROGN
- (DEFGENERIC GET-CHAT-MEMBERS-COUNT
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getchatmemberscount
-Use this method to get the number of members in a chat. Returns Int on success."))
- (DEFMETHOD GET-CHAT-MEMBERS-COUNT ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "getChatMembersCount" OPTIONS))))
+(DEFUN GET-CHAT-MEMBERS-COUNT (CHAT--ID)
+  "https://core.telegram.org/bots/api#getchatmemberscount
+Use this method to get the number of members in a chat. Returns Int on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "getChatMembersCount" OPTIONS)))
 
-(PROGN
- (DEFGENERIC GET-CHAT-MEMBER
-     (BOT CHAT--ID USER--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getchatmember
-Use this method to get information about a member of a chat. Returns a ChatMember object on success."))
- (DEFMETHOD GET-CHAT-MEMBER ((BOT BOT) CHAT--ID USER--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE USER--ID INTEGER)
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
-     (MAKE-REQUEST BOT "getChatMember" OPTIONS :RETURN-TYPE '*CHAT-MEMBER))))
+(DEFUN GET-CHAT-MEMBER (CHAT--ID USER--ID)
+  "https://core.telegram.org/bots/api#getchatmember
+Use this method to get information about a member of a chat. Returns a ChatMember object on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE USER--ID INTEGER)
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
+    (LIST "getChatMember" OPTIONS :RETURN-TYPE '*CHAT-MEMBER)))
 
-(PROGN
- (DEFGENERIC SET-CHAT-STICKER-SET
-     (BOT CHAT--ID STICKER--SET--NAME)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setchatstickerset
-Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success."))
- (DEFMETHOD SET-CHAT-STICKER-SET ((BOT BOT) CHAT--ID STICKER--SET--NAME)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE STICKER--SET--NAME STRING)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID)
-                (CONS :STICKER_SET_NAME STICKER--SET--NAME))))
-     (MAKE-REQUEST BOT "setChatStickerSet" OPTIONS :RETURN-TYPE 'GET-CHAT))))
+(DEFUN SET-CHAT-STICKER-SET (CHAT--ID STICKER--SET--NAME)
+  "https://core.telegram.org/bots/api#setchatstickerset
+Use this method to set a new group sticker set for a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE STICKER--SET--NAME STRING)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID)
+               (CONS :STICKER_SET_NAME STICKER--SET--NAME))))
+    (LIST "setChatStickerSet" OPTIONS :RETURN-TYPE 'GET-CHAT)))
 
-(PROGN
- (DEFGENERIC DELETE-CHAT-STICKER-SET
-     (BOT CHAT--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#deletechatstickerset
-Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success."))
- (DEFMETHOD DELETE-CHAT-STICKER-SET ((BOT BOT) CHAT--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (MAKE-REQUEST BOT "deleteChatStickerSet" OPTIONS :RETURN-TYPE 'GET-CHAT))))
+(DEFUN DELETE-CHAT-STICKER-SET (CHAT--ID)
+  "https://core.telegram.org/bots/api#deletechatstickerset
+Use this method to delete a group sticker set from a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
+    (LIST "deleteChatStickerSet" OPTIONS :RETURN-TYPE 'GET-CHAT)))
 
-(PROGN
- (DEFGENERIC ANSWER-CALLBACK-QUERY
-     (BOT CALLBACK--QUERY--ID &KEY TEXT SHOW--ALERT URL CACHE--TIME)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#answercallbackquery
-Use this method to send answers to callback queries sent from inline keyboards. The answer will be displayed to the user as a notification at the top of the chat screen or as an alert. On success, True is returned."))
- (DEFMETHOD ANSWER-CALLBACK-QUERY
-            ((BOT BOT) CALLBACK--QUERY--ID
-             &KEY TEXT SHOW--ALERT URL CACHE--TIME)
-   (CHECK-TYPE CALLBACK--QUERY--ID STRING)
-   (LET ((OPTIONS (LIST (CONS :CALLBACK_QUERY_ID CALLBACK--QUERY--ID))))
-     (WHEN TEXT (NCONC OPTIONS (LIST (CONS :TEXT TEXT))))
-     (WHEN SHOW--ALERT (NCONC OPTIONS (LIST (CONS :SHOW_ALERT SHOW--ALERT))))
-     (WHEN URL (NCONC OPTIONS (LIST (CONS :URL URL))))
-     (WHEN CACHE--TIME (NCONC OPTIONS (LIST (CONS :CACHE_TIME CACHE--TIME))))
-     (MAKE-REQUEST BOT "answerCallbackQuery" OPTIONS))))
+(DEFUN ANSWER-CALLBACK-QUERY
+       (CALLBACK--QUERY--ID &KEY TEXT SHOW--ALERT URL CACHE--TIME)
+  "https://core.telegram.org/bots/api#answercallbackquery
+Use this method to send answers to callback queries sent from inline keyboards. The answer will be displayed to the user as a notification at the top of the chat screen or as an alert. On success, True is returned."
+  (CHECK-TYPE CALLBACK--QUERY--ID STRING)
+  (LET ((OPTIONS (LIST (CONS :CALLBACK_QUERY_ID CALLBACK--QUERY--ID))))
+    (WHEN TEXT (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :TEXT TEXT)))))
+    (WHEN SHOW--ALERT
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :SHOW_ALERT SHOW--ALERT)))))
+    (WHEN URL (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :URL URL)))))
+    (WHEN CACHE--TIME
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CACHE_TIME CACHE--TIME)))))
+    (LIST "answerCallbackQuery" OPTIONS)))
 
 
 ;----Updating messages----
-(PROGN
- (DEFGENERIC EDIT-MESSAGE-TEXT
-     (BOT TEXT &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID PARSE--MODE
-      DISABLE--WEB--PAGE--PREVIEW REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#editmessagetext
-Use this method to edit text and game messages. On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned."))
- (DEFMETHOD EDIT-MESSAGE-TEXT
-            ((BOT BOT) TEXT
-             &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID PARSE--MODE
-             DISABLE--WEB--PAGE--PREVIEW REPLY--MARKUP)
-   (CHECK-TYPE TEXT STRING)
-   (LET ((OPTIONS (LIST (CONS :TEXT TEXT))))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN DISABLE--WEB--PAGE--PREVIEW
-       (NCONC OPTIONS
-              (LIST
-               (CONS :DISABLE_WEB_PAGE_PREVIEW DISABLE--WEB--PAGE--PREVIEW))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "editMessageText" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN EDIT-MESSAGE-TEXT
+       (TEXT
+        &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID PARSE--MODE
+        DISABLE--WEB--PAGE--PREVIEW REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#editmessagetext
+Use this method to edit text and game messages. On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned."
+  (CHECK-TYPE TEXT STRING)
+  (LET ((OPTIONS (LIST (CONS :TEXT TEXT))))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN DISABLE--WEB--PAGE--PREVIEW
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_WEB_PAGE_PREVIEW
+                            DISABLE--WEB--PAGE--PREVIEW)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "editMessageText" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC EDIT-MESSAGE-CAPTION
-     (BOT &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID CAPTION PARSE--MODE
-      REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#editmessagecaption
-Use this method to edit captions of messages. On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned."))
- (DEFMETHOD EDIT-MESSAGE-CAPTION
-            ((BOT BOT)
-             &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID CAPTION PARSE--MODE
-             REPLY--MARKUP)
-   (LET ((OPTIONS (LIST)))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (WHEN CAPTION (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION))))
-     (WHEN PARSE--MODE (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "editMessageCaption" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN EDIT-MESSAGE-CAPTION
+       (
+        &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID CAPTION PARSE--MODE
+        REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#editmessagecaption
+Use this method to edit captions of messages. On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned."
+  (LET ((OPTIONS (LIST)))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (WHEN CAPTION
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CAPTION CAPTION)))))
+    (WHEN PARSE--MODE
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :PARSE_MODE PARSE--MODE)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "editMessageCaption" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC EDIT-MESSAGE-MEDIA
-     (BOT MEDIA &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#editmessagemedia
-Use this method to edit animation, audio, document, photo, or video messages. If a message is a part of a message album, then it can be edited only to a photo or a video. Otherwise, message type can be changed arbitrarily. When inline message is edited, new file can't be uploaded. Use previously uploaded file via its file_id or specify a URL. On success, if the edited message was sent by the bot, the edited Message is returned, otherwise True is returned."))
- (DEFMETHOD EDIT-MESSAGE-MEDIA
-            ((BOT BOT) MEDIA
-             &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE MEDIA *INPUT-MEDIA)
-   (LET ((OPTIONS (LIST (CONS :MEDIA MEDIA))))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "editMessageMedia" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN EDIT-MESSAGE-MEDIA
+       (MEDIA &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#editmessagemedia
+Use this method to edit animation, audio, document, photo, or video messages. If a message is a part of a message album, then it can be edited only to a photo or a video. Otherwise, message type can be changed arbitrarily. When inline message is edited, new file can't be uploaded. Use previously uploaded file via its file_id or specify a URL. On success, if the edited message was sent by the bot, the edited Message is returned, otherwise True is returned."
+  (CHECK-TYPE MEDIA *INPUT-MEDIA)
+  (LET ((OPTIONS (LIST (CONS :MEDIA MEDIA))))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "editMessageMedia" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC EDIT-MESSAGE-REPLY-MARKUP
-     (BOT &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#editmessagereplymarkup
-Use this method to edit only the reply markup of messages. On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned."))
- (DEFMETHOD EDIT-MESSAGE-REPLY-MARKUP
-            ((BOT BOT)
-             &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
-   (LET ((OPTIONS (LIST)))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "editMessageReplyMarkup" OPTIONS :RETURN-TYPE
-      '*MESSAGE))))
+(DEFUN EDIT-MESSAGE-REPLY-MARKUP
+       (&KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#editmessagereplymarkup
+Use this method to edit only the reply markup of messages. On success, if edited message is sent by the bot, the edited Message is returned, otherwise True is returned."
+  (LET ((OPTIONS (LIST)))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "editMessageReplyMarkup" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC STOP-POLL
-     (BOT CHAT--ID MESSAGE--ID &KEY REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#stoppoll
-Use this method to stop a poll which was sent by the bot. On success, the stopped Poll with the final results is returned."))
- (DEFMETHOD STOP-POLL ((BOT BOT) CHAT--ID MESSAGE--ID &KEY REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE MESSAGE--ID INTEGER)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "stopPoll" OPTIONS :RETURN-TYPE '*POLL))))
+(DEFUN STOP-POLL (CHAT--ID MESSAGE--ID &KEY REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#stoppoll
+Use this method to stop a poll which was sent by the bot. On success, the stopped Poll with the final results is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE MESSAGE--ID INTEGER)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MESSAGE_ID MESSAGE--ID))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "stopPoll" OPTIONS :RETURN-TYPE '*POLL)))
 
-(PROGN
- (DEFGENERIC DELETE-MESSAGE
-     (BOT CHAT--ID MESSAGE--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#deletemessage
-Use this method to delete a message, including service messages, with the following limitations:- A message can only be deleted if it was sent less than 48 hours ago.- Bots can delete outgoing messages in private chats, groups, and supergroups.- Bots can delete incoming messages in private chats.- Bots granted can_post_messages permissions can delete outgoing messages in channels.- If the bot is an administrator of a group, it can delete any message there.- If the bot has can_delete_messages permission in a supergroup or a channel, it can delete any message there.Returns True on success."))
- (DEFMETHOD DELETE-MESSAGE ((BOT BOT) CHAT--ID MESSAGE--ID)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE MESSAGE--ID INTEGER)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MESSAGE_ID MESSAGE--ID))))
-     (MAKE-REQUEST BOT "deleteMessage" OPTIONS))))
+(DEFUN DELETE-MESSAGE (CHAT--ID MESSAGE--ID)
+  "https://core.telegram.org/bots/api#deletemessage
+Use this method to delete a message, including service messages, with the following limitations:- A message can only be deleted if it was sent less than 48 hours ago.- Bots can delete outgoing messages in private chats, groups, and supergroups.- Bots can delete incoming messages in private chats.- Bots granted can_post_messages permissions can delete outgoing messages in channels.- If the bot is an administrator of a group, it can delete any message there.- If the bot has can_delete_messages permission in a supergroup or a channel, it can delete any message there.Returns True on success."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE MESSAGE--ID INTEGER)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MESSAGE_ID MESSAGE--ID))))
+    (LIST "deleteMessage" OPTIONS)))
 
 
 ;----Stickers----
@@ -1827,111 +1813,95 @@ This object represents a sticker set."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#maskposition
 This object describes the position on faces where a mask should be placed by default."))
 
-(PROGN
- (DEFGENERIC SEND-STICKER
-     (BOT CHAT--ID STICKER &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID
-      REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendsticker
-Use this method to send static .WEBP or animated .TGS stickers. On success, the sent Message is returned."))
- (DEFMETHOD SEND-STICKER
-            ((BOT BOT) CHAT--ID STICKER
-             &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
-   (CHECK-TYPE STICKER (OR *INPUT-FILE STRING))
-   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :STICKER STICKER))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendSticker" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-STICKER
+       (CHAT--ID STICKER
+        &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendsticker
+Use this method to send static .WEBP or animated .TGS stickers. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
+  (CHECK-TYPE STICKER (OR *INPUT-FILE STRING))
+  (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :STICKER STICKER))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendSticker" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC GET-STICKER-SET
-     (BOT NAME)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getstickerset
-Use this method to get a sticker set. On success, a StickerSet object is returned."))
- (DEFMETHOD GET-STICKER-SET ((BOT BOT) NAME)
-   (CHECK-TYPE NAME STRING)
-   (LET ((OPTIONS (LIST (CONS :NAME NAME))))
-     (MAKE-REQUEST BOT "getStickerSet" OPTIONS :RETURN-TYPE '*STICKER-SET))))
+(DEFUN GET-STICKER-SET (NAME)
+  "https://core.telegram.org/bots/api#getstickerset
+Use this method to get a sticker set. On success, a StickerSet object is returned."
+  (CHECK-TYPE NAME STRING)
+  (LET ((OPTIONS (LIST (CONS :NAME NAME))))
+    (LIST "getStickerSet" OPTIONS :RETURN-TYPE '*STICKER-SET)))
 
-(PROGN
- (DEFGENERIC UPLOAD-STICKER-FILE
-     (BOT USER--ID PNG--STICKER)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#uploadstickerfile
-Use this method to upload a .png file with a sticker for later use in createNewStickerSet and addStickerToSet methods (can be used multiple times). Returns the uploaded File on success."))
- (DEFMETHOD UPLOAD-STICKER-FILE ((BOT BOT) USER--ID PNG--STICKER)
-   (CHECK-TYPE USER--ID INTEGER)
-   (CHECK-TYPE PNG--STICKER *INPUT-FILE)
-   (LET ((OPTIONS
-          (LIST (CONS :USER_ID USER--ID) (CONS :PNG_STICKER PNG--STICKER))))
-     (MAKE-REQUEST BOT "uploadStickerFile" OPTIONS :RETURN-TYPE '*FILE))))
+(DEFUN UPLOAD-STICKER-FILE (USER--ID PNG--STICKER)
+  "https://core.telegram.org/bots/api#uploadstickerfile
+Use this method to upload a .png file with a sticker for later use in createNewStickerSet and addStickerToSet methods (can be used multiple times). Returns the uploaded File on success."
+  (CHECK-TYPE USER--ID INTEGER)
+  (CHECK-TYPE PNG--STICKER *INPUT-FILE)
+  (LET ((OPTIONS
+         (LIST (CONS :USER_ID USER--ID) (CONS :PNG_STICKER PNG--STICKER))))
+    (LIST "uploadStickerFile" OPTIONS :RETURN-TYPE '*FILE)))
 
-(PROGN
- (DEFGENERIC CREATE-NEW-STICKER-SET
-     (BOT USER--ID NAME TITLE PNG--STICKER EMOJIS &KEY CONTAINS--MASKS
-      MASK--POSITION)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#createnewstickerset
-Use this method to create new sticker set owned by a user. The bot will be able to edit the created sticker set. Returns True on success."))
- (DEFMETHOD CREATE-NEW-STICKER-SET
-            ((BOT BOT) USER--ID NAME TITLE PNG--STICKER EMOJIS
-             &KEY CONTAINS--MASKS MASK--POSITION)
-   (CHECK-TYPE USER--ID INTEGER)
-   (CHECK-TYPE NAME STRING)
-   (CHECK-TYPE TITLE STRING)
-   (CHECK-TYPE PNG--STICKER (OR *INPUT-FILE STRING))
-   (CHECK-TYPE EMOJIS STRING)
-   (LET ((OPTIONS
-          (LIST (CONS :USER_ID USER--ID) (CONS :NAME NAME) (CONS :TITLE TITLE)
-                (CONS :PNG_STICKER PNG--STICKER) (CONS :EMOJIS EMOJIS))))
-     (WHEN CONTAINS--MASKS
-       (NCONC OPTIONS (LIST (CONS :CONTAINS_MASKS CONTAINS--MASKS))))
-     (WHEN MASK--POSITION
-       (NCONC OPTIONS (LIST (CONS :MASK_POSITION MASK--POSITION))))
-     (MAKE-REQUEST BOT "createNewStickerSet" OPTIONS))))
+(DEFUN CREATE-NEW-STICKER-SET
+       (USER--ID NAME TITLE PNG--STICKER EMOJIS
+        &KEY CONTAINS--MASKS MASK--POSITION)
+  "https://core.telegram.org/bots/api#createnewstickerset
+Use this method to create new sticker set owned by a user. The bot will be able to edit the created sticker set. Returns True on success."
+  (CHECK-TYPE USER--ID INTEGER)
+  (CHECK-TYPE NAME STRING)
+  (CHECK-TYPE TITLE STRING)
+  (CHECK-TYPE PNG--STICKER (OR *INPUT-FILE STRING))
+  (CHECK-TYPE EMOJIS STRING)
+  (LET ((OPTIONS
+         (LIST (CONS :USER_ID USER--ID) (CONS :NAME NAME) (CONS :TITLE TITLE)
+               (CONS :PNG_STICKER PNG--STICKER) (CONS :EMOJIS EMOJIS))))
+    (WHEN CONTAINS--MASKS
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :CONTAINS_MASKS CONTAINS--MASKS)))))
+    (WHEN MASK--POSITION
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :MASK_POSITION MASK--POSITION)))))
+    (LIST "createNewStickerSet" OPTIONS)))
 
-(PROGN
- (DEFGENERIC ADD-STICKER-TO-SET
-     (BOT USER--ID NAME PNG--STICKER EMOJIS &KEY MASK--POSITION)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#addstickertoset
-Use this method to add a new sticker to a set created by the bot. Returns True on success."))
- (DEFMETHOD ADD-STICKER-TO-SET
-            ((BOT BOT) USER--ID NAME PNG--STICKER EMOJIS &KEY MASK--POSITION)
-   (CHECK-TYPE USER--ID INTEGER)
-   (CHECK-TYPE NAME STRING)
-   (CHECK-TYPE PNG--STICKER (OR *INPUT-FILE STRING))
-   (CHECK-TYPE EMOJIS STRING)
-   (LET ((OPTIONS
-          (LIST (CONS :USER_ID USER--ID) (CONS :NAME NAME)
-                (CONS :PNG_STICKER PNG--STICKER) (CONS :EMOJIS EMOJIS))))
-     (WHEN MASK--POSITION
-       (NCONC OPTIONS (LIST (CONS :MASK_POSITION MASK--POSITION))))
-     (MAKE-REQUEST BOT "addStickerToSet" OPTIONS))))
+(DEFUN ADD-STICKER-TO-SET
+       (USER--ID NAME PNG--STICKER EMOJIS &KEY MASK--POSITION)
+  "https://core.telegram.org/bots/api#addstickertoset
+Use this method to add a new sticker to a set created by the bot. Returns True on success."
+  (CHECK-TYPE USER--ID INTEGER)
+  (CHECK-TYPE NAME STRING)
+  (CHECK-TYPE PNG--STICKER (OR *INPUT-FILE STRING))
+  (CHECK-TYPE EMOJIS STRING)
+  (LET ((OPTIONS
+         (LIST (CONS :USER_ID USER--ID) (CONS :NAME NAME)
+               (CONS :PNG_STICKER PNG--STICKER) (CONS :EMOJIS EMOJIS))))
+    (WHEN MASK--POSITION
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :MASK_POSITION MASK--POSITION)))))
+    (LIST "addStickerToSet" OPTIONS)))
 
-(PROGN
- (DEFGENERIC SET-STICKER-POSITION-IN-SET
-     (BOT STICKER POSITION)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setstickerpositioninset
-Use this method to move a sticker in a set created by the bot to a specific position . Returns True on success."))
- (DEFMETHOD SET-STICKER-POSITION-IN-SET ((BOT BOT) STICKER POSITION)
-   (CHECK-TYPE STICKER STRING)
-   (CHECK-TYPE POSITION INTEGER)
-   (LET ((OPTIONS (LIST (CONS :STICKER STICKER) (CONS :POSITION POSITION))))
-     (MAKE-REQUEST BOT "setStickerPositionInSet" OPTIONS))))
+(DEFUN SET-STICKER-POSITION-IN-SET (STICKER POSITION)
+  "https://core.telegram.org/bots/api#setstickerpositioninset
+Use this method to move a sticker in a set created by the bot to a specific position . Returns True on success."
+  (CHECK-TYPE STICKER STRING)
+  (CHECK-TYPE POSITION INTEGER)
+  (LET ((OPTIONS (LIST (CONS :STICKER STICKER) (CONS :POSITION POSITION))))
+    (LIST "setStickerPositionInSet" OPTIONS)))
 
-(PROGN
- (DEFGENERIC DELETE-STICKER-FROM-SET
-     (BOT STICKER)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#deletestickerfromset
-Use this method to delete a sticker from a set created by the bot. Returns True on success."))
- (DEFMETHOD DELETE-STICKER-FROM-SET ((BOT BOT) STICKER)
-   (CHECK-TYPE STICKER STRING)
-   (LET ((OPTIONS (LIST (CONS :STICKER STICKER))))
-     (MAKE-REQUEST BOT "deleteStickerFromSet" OPTIONS))))
+(DEFUN DELETE-STICKER-FROM-SET (STICKER)
+  "https://core.telegram.org/bots/api#deletestickerfromset
+Use this method to delete a sticker from a set created by the bot. Returns True on success."
+  (CHECK-TYPE STICKER STRING)
+  (LET ((OPTIONS (LIST (CONS :STICKER STICKER))))
+    (LIST "deleteStickerFromSet" OPTIONS)))
 
 
 ;----Inline mode----
@@ -1952,41 +1922,38 @@ Use this method to delete a sticker from a set created by the bot. Returns True 
           (:DOCUMENTATION "https://core.telegram.org/bots/api#inlinequery
 This object represents an incoming inline query. When the user sends an empty query, your bot could return some default or trending results."))
 
-(PROGN
- (DEFGENERIC ANSWER-INLINE-QUERY
-     (BOT INLINE--QUERY--ID RESULTS &KEY CACHE--TIME IS--PERSONAL NEXT--OFFSET
-      SWITCH--PM--TEXT SWITCH--PM--PARAMETER)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#answerinlinequery
-Use this method to send answers to an inline query. On success, True is returned.No more than 50 results per query are allowed."))
- (DEFMETHOD ANSWER-INLINE-QUERY
-            ((BOT BOT) INLINE--QUERY--ID RESULTS
-             &KEY CACHE--TIME IS--PERSONAL NEXT--OFFSET SWITCH--PM--TEXT
-             SWITCH--PM--PARAMETER)
-   (CHECK-TYPE INLINE--QUERY--ID STRING)
-   (CHECK-TYPE RESULTS (ARRAY *INLINE-QUERY-RESULT))
-   (LET ((OPTIONS
-          (LIST (CONS :INLINE_QUERY_ID INLINE--QUERY--ID)
-                (CONS :RESULTS RESULTS))))
-     (WHEN CACHE--TIME (NCONC OPTIONS (LIST (CONS :CACHE_TIME CACHE--TIME))))
-     (WHEN IS--PERSONAL
-       (NCONC OPTIONS (LIST (CONS :IS_PERSONAL IS--PERSONAL))))
-     (WHEN NEXT--OFFSET
-       (NCONC OPTIONS (LIST (CONS :NEXT_OFFSET NEXT--OFFSET))))
-     (WHEN SWITCH--PM--TEXT
-       (NCONC OPTIONS (LIST (CONS :SWITCH_PM_TEXT SWITCH--PM--TEXT))))
-     (WHEN SWITCH--PM--PARAMETER
-       (NCONC OPTIONS
-              (LIST (CONS :SWITCH_PM_PARAMETER SWITCH--PM--PARAMETER))))
-     (MAKE-REQUEST BOT "answerInlineQuery" OPTIONS))))
+(DEFUN ANSWER-INLINE-QUERY
+       (INLINE--QUERY--ID RESULTS
+        &KEY CACHE--TIME IS--PERSONAL NEXT--OFFSET SWITCH--PM--TEXT
+        SWITCH--PM--PARAMETER)
+  "https://core.telegram.org/bots/api#answerinlinequery
+Use this method to send answers to an inline query. On success, True is returned.No more than 50 results per query are allowed."
+  (CHECK-TYPE INLINE--QUERY--ID STRING)
+  (CHECK-TYPE RESULTS (ARRAY *INLINE-QUERY-RESULT))
+  (LET ((OPTIONS
+         (LIST (CONS :INLINE_QUERY_ID INLINE--QUERY--ID)
+               (CONS :RESULTS RESULTS))))
+    (WHEN CACHE--TIME
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CACHE_TIME CACHE--TIME)))))
+    (WHEN IS--PERSONAL
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :IS_PERSONAL IS--PERSONAL)))))
+    (WHEN NEXT--OFFSET
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :NEXT_OFFSET NEXT--OFFSET)))))
+    (WHEN SWITCH--PM--TEXT
+      (SETF OPTIONS
+              (NCONC OPTIONS (LIST (CONS :SWITCH_PM_TEXT SWITCH--PM--TEXT)))))
+    (WHEN SWITCH--PM--PARAMETER
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :SWITCH_PM_PARAMETER SWITCH--PM--PARAMETER)))))
+    (LIST "answerInlineQuery" OPTIONS)))
 
-(PROGN
- (DEFGENERIC *INLINE-QUERY-RESULT
-     (BOT)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#inlinequeryresult
-This object represents one result of an inline query. Telegram clients currently support results of the following 20 types:"))
- (DEFMETHOD *INLINE-QUERY-RESULT ((BOT BOT))
-   (LET ((OPTIONS (LIST)))
-     (MAKE-REQUEST BOT "InlineQueryResult" OPTIONS))))
+(DEFUN *INLINE-QUERY-RESULT ()
+  "https://core.telegram.org/bots/api#inlinequeryresult
+This object represents one result of an inline query. Telegram clients currently support results of the following 20 types:"
+  (LET ((OPTIONS (LIST)))
+    (LIST "InlineQueryResult" OPTIONS)))
 
 (DEFCLASS *INLINE-QUERY-RESULT-ARTICLE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2634,14 +2601,11 @@ Represents a link to a voice message stored on the Telegram servers. By default,
            "https://core.telegram.org/bots/api#inlinequeryresultcachedaudio
 Represents a link to an mp3 audio file stored on the Telegram servers. By default, this audio file will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the audio."))
 
-(PROGN
- (DEFGENERIC *INPUT-MESSAGE-CONTENT
-     (BOT)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#inputmessagecontent
-This object represents the content of a message to be sent as a result of an inline query. Telegram clients currently support the following 4 types:"))
- (DEFMETHOD *INPUT-MESSAGE-CONTENT ((BOT BOT))
-   (LET ((OPTIONS (LIST)))
-     (MAKE-REQUEST BOT "InputMessageContent" OPTIONS))))
+(DEFUN *INPUT-MESSAGE-CONTENT ()
+  "https://core.telegram.org/bots/api#inputmessagecontent
+This object represents the content of a message to be sent as a result of an inline query. Telegram clients currently support the following 4 types:"
+  (LET ((OPTIONS (LIST)))
+    (LIST "InputMessageContent" OPTIONS)))
 
 (DEFCLASS *INPUT-TEXT-MESSAGE-CONTENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2807,25 +2771,19 @@ Contains information about documents or other Telegram Passport elements shared 
            "https://core.telegram.org/bots/api#encryptedcredentials
 Contains data required for decrypting and authenticating EncryptedPassportElement. See the Telegram Passport Documentation for a complete description of the data decryption and authentication processes."))
 
-(PROGN
- (DEFGENERIC SET-PASSPORT-DATA-ERRORS
-     (BOT USER--ID ERRORS)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setpassportdataerrors
-Informs a user that some of the Telegram Passport elements they provided contains errors. The user will not be able to re-submit their Passport to you until the errors are fixed (the contents of the field for which you returned the error must change). Returns True on success."))
- (DEFMETHOD SET-PASSPORT-DATA-ERRORS ((BOT BOT) USER--ID ERRORS)
-   (CHECK-TYPE USER--ID INTEGER)
-   (CHECK-TYPE ERRORS (ARRAY *PASSPORT-ELEMENT-ERROR))
-   (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID) (CONS :ERRORS ERRORS))))
-     (MAKE-REQUEST BOT "setPassportDataErrors" OPTIONS))))
+(DEFUN SET-PASSPORT-DATA-ERRORS (USER--ID ERRORS)
+  "https://core.telegram.org/bots/api#setpassportdataerrors
+Informs a user that some of the Telegram Passport elements they provided contains errors. The user will not be able to re-submit their Passport to you until the errors are fixed (the contents of the field for which you returned the error must change). Returns True on success."
+  (CHECK-TYPE USER--ID INTEGER)
+  (CHECK-TYPE ERRORS (ARRAY *PASSPORT-ELEMENT-ERROR))
+  (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID) (CONS :ERRORS ERRORS))))
+    (LIST "setPassportDataErrors" OPTIONS)))
 
-(PROGN
- (DEFGENERIC *PASSPORT-ELEMENT-ERROR
-     (BOT)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#passportelementerror
-This object represents an error in the Telegram Passport element which was submitted that should be resolved by the user. It should be one of:"))
- (DEFMETHOD *PASSPORT-ELEMENT-ERROR ((BOT BOT))
-   (LET ((OPTIONS (LIST)))
-     (MAKE-REQUEST BOT "PassportElementError" OPTIONS))))
+(DEFUN *PASSPORT-ELEMENT-ERROR ()
+  "https://core.telegram.org/bots/api#passportelementerror
+This object represents an error in the Telegram Passport element which was submitted that should be resolved by the user. It should be one of:"
+  (LET ((OPTIONS (LIST)))
+    (LIST "PassportElementError" OPTIONS)))
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-DATA-FIELD NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2985,29 +2943,29 @@ Represents an issue in an unspecified place. The error is considered resolved wh
 
 
 ;----Games----
-(PROGN
- (DEFGENERIC SEND-GAME
-     (BOT CHAT--ID GAME--SHORT--NAME &KEY DISABLE--NOTIFICATION
-      REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#sendgame
-Use this method to send a game. On success, the sent Message is returned."))
- (DEFMETHOD SEND-GAME
-            ((BOT BOT) CHAT--ID GAME--SHORT--NAME
-             &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
-   (CHECK-TYPE CHAT--ID INTEGER)
-   (CHECK-TYPE GAME--SHORT--NAME STRING)
-   (LET ((OPTIONS
-          (LIST (CONS :CHAT_ID CHAT--ID)
-                (CONS :GAME_SHORT_NAME GAME--SHORT--NAME))))
-     (WHEN DISABLE--NOTIFICATION
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION))))
-     (WHEN REPLY--TO--MESSAGE--ID
-       (NCONC OPTIONS
-              (LIST (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID))))
-     (WHEN REPLY--MARKUP
-       (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP))))
-     (MAKE-REQUEST BOT "sendGame" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SEND-GAME
+       (CHAT--ID GAME--SHORT--NAME
+        &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID REPLY--MARKUP)
+  "https://core.telegram.org/bots/api#sendgame
+Use this method to send a game. On success, the sent Message is returned."
+  (CHECK-TYPE CHAT--ID INTEGER)
+  (CHECK-TYPE GAME--SHORT--NAME STRING)
+  (LET ((OPTIONS
+         (LIST (CONS :CHAT_ID CHAT--ID)
+               (CONS :GAME_SHORT_NAME GAME--SHORT--NAME))))
+    (WHEN DISABLE--NOTIFICATION
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
+    (WHEN REPLY--TO--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
+    (WHEN REPLY--MARKUP
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
+    (LIST "sendGame" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
 (DEFCLASS *GAME NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Game")
@@ -3030,43 +2988,46 @@ Use this method to send a game. On success, the sent Message is returned."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#game
 This object represents a game. Use BotFather to create and edit games, their short names will act as unique identifiers."))
 
-(PROGN
- (DEFGENERIC SET-GAME-SCORE
-     (BOT USER--ID SCORE &KEY FORCE DISABLE--EDIT--MESSAGE CHAT--ID MESSAGE--ID
-      INLINE--MESSAGE--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#setgamescore
-Use this method to set the score of the specified user in a game. On success, if the message was sent by the bot, returns the edited Message, otherwise returns True. Returns an error, if the new score is not greater than the user's current score in the chat and force is False."))
- (DEFMETHOD SET-GAME-SCORE
-            ((BOT BOT) USER--ID SCORE
-             &KEY FORCE DISABLE--EDIT--MESSAGE CHAT--ID MESSAGE--ID
-             INLINE--MESSAGE--ID)
-   (CHECK-TYPE USER--ID INTEGER)
-   (CHECK-TYPE SCORE INTEGER)
-   (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID) (CONS :SCORE SCORE))))
-     (WHEN FORCE (NCONC OPTIONS (LIST (CONS :FORCE FORCE))))
-     (WHEN DISABLE--EDIT--MESSAGE
-       (NCONC OPTIONS
-              (LIST (CONS :DISABLE_EDIT_MESSAGE DISABLE--EDIT--MESSAGE))))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (MAKE-REQUEST BOT "setGameScore" OPTIONS :RETURN-TYPE '*MESSAGE))))
+(DEFUN SET-GAME-SCORE
+       (USER--ID SCORE
+        &KEY FORCE DISABLE--EDIT--MESSAGE CHAT--ID MESSAGE--ID
+        INLINE--MESSAGE--ID)
+  "https://core.telegram.org/bots/api#setgamescore
+Use this method to set the score of the specified user in a game. On success, if the message was sent by the bot, returns the edited Message, otherwise returns True. Returns an error, if the new score is not greater than the user's current score in the chat and force is False."
+  (CHECK-TYPE USER--ID INTEGER)
+  (CHECK-TYPE SCORE INTEGER)
+  (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID) (CONS :SCORE SCORE))))
+    (WHEN FORCE (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :FORCE FORCE)))))
+    (WHEN DISABLE--EDIT--MESSAGE
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST
+                      (CONS :DISABLE_EDIT_MESSAGE DISABLE--EDIT--MESSAGE)))))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (LIST "setGameScore" OPTIONS :RETURN-TYPE '*MESSAGE)))
 
-(PROGN
- (DEFGENERIC GET-GAME-HIGH-SCORES
-     (BOT USER--ID &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID)
-   (:DOCUMENTATION "https://core.telegram.org/bots/api#getgamehighscores
-Use this method to get data for high score tables. Will return the score of the specified user and several of his neighbors in a game. On success, returns an Array of GameHighScore objects."))
- (DEFMETHOD GET-GAME-HIGH-SCORES
-            ((BOT BOT) USER--ID &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID)
-   (CHECK-TYPE USER--ID INTEGER)
-   (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID))))
-     (WHEN CHAT--ID (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
-     (WHEN MESSAGE--ID (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID))))
-     (WHEN INLINE--MESSAGE--ID
-       (NCONC OPTIONS (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID))))
-     (MAKE-REQUEST BOT "getGameHighScores" OPTIONS))))
+(DEFUN GET-GAME-HIGH-SCORES
+       (USER--ID &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID)
+  "https://core.telegram.org/bots/api#getgamehighscores
+Use this method to get data for high score tables. Will return the score of the specified user and several of his neighbors in a game. On success, returns an Array of GameHighScore objects."
+  (CHECK-TYPE USER--ID INTEGER)
+  (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID))))
+    (WHEN CHAT--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CHAT_ID CHAT--ID)))))
+    (WHEN MESSAGE--ID
+      (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :MESSAGE_ID MESSAGE--ID)))))
+    (WHEN INLINE--MESSAGE--ID
+      (SETF OPTIONS
+              (NCONC OPTIONS
+                     (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
+    (LIST "getGameHighScores" OPTIONS)))
 
 (DEFCLASS *GAME-HIGH-SCORE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
