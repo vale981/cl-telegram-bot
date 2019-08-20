@@ -61,7 +61,7 @@
     :initform nil)
    (reply-queue
     :type (proper-list function)
-    :documentation "A queue for storing reply fetchers."
+    :documentation "A queue for storing reply matchers."
     :initform nil)))
 
 (defmethod initialize-instance :after ((object bot) &key &allow-other-keys)
@@ -72,13 +72,34 @@
     (setf endpoint      (concatenate 'string api-uri "bot" token "/")
           file-endpoint (concatenate 'string api-uri "file/" "bot" token "/"))))
 
-(defgeneric add-reply-fetcher (bot fetcher result)
-  (:documentation "Adds a reply fetcher function that takes one argument of type *UPDATE and returns T if the update is the desired reply. Returns a PROMISE."))
+(defgeneric add-reply-matcher (bot matcher result)
+  (:documentation "Adds a reply matcher function that takes one argument of type *UPDATE and returns T if the update is the desired reply. Returns a PROMISE."))
 
-(defmethod add-reply-fetcher ((bot bot) fetcher result)
+(defmethod add-reply-matcher ((bot bot) matcher result)
   (let ((promise (lparallel:promise)))
-    (push `(,promise ,fetcher ,result) (slot-value bot 'reply-queue))
+    (push `(,promise ,matcher ,result) (slot-value bot 'reply-queue))
     promise))
+
+(defgeneric add-update-hook (bot hook &optional key)
+  (:documentation "Adds an update hook that will be called with an array of *UPDATE objects on each update, the return value is ignored. Returns a keyword to remove that hook."))
+
+(defmethod add-update-hook ((bot bot) hook &optional key)
+  (let ((final-key (if key key (gensym))))
+    (with-slots (update-hooks) bot
+      (when (and key (find key update-hooks :key #'car))
+        (error (format nil "Hook with the key \"~a\" already registered." key)))
+      (push `(,final-key . ,hook) (slot-value bot 'update-hooks)))
+    key))
+
+(defgeneric remove-update-hook (bot key)
+  (:documentation "Removes an update hook by its key which was returned open its registration. Returns t (success) or nil."))
+
+(defmethod remove-update-hook ((bot bot) key)
+  (with-slots (update-hooks) bot
+    (let ((pos (position key update-hooks :key #'car)))
+      (when pos
+        (setf update-hooks (nconc (subseq update-hooks 0 pos) (nthcdr (1+ pos) update-hooks))))
+      pos)))
 
 (defgeneric process-updates (bot updates)
   (:documentation "Processes the updates fetched by FETCH-UPDATES to detect commands and replies."))
@@ -88,14 +109,17 @@
   (declare (type (vector *update) updates)))
 
 (defmethod process-updates ((bot bot) updates)
-  (with-slots (reply-queue) bot         ; Process reply-fetchers
-    (let ((unresolved nil))
+  (with-slots (reply-queue update-hooks) bot
+    (dolist (hook update-hooks)         ; process hooks
+      (funcall (cdr hook) updates))
+
+    (let ((unresolved nil)) ;; Process reply-matchers
       (loop for update across updates do
-        (dolist (fetcher-list reply-queue)
-          (let ((reply (apply (second fetcher-list) (list update (third fetcher-list)))))
+        (dolist (matcher-list reply-queue)
+          (let ((reply (apply (second matcher-list) (list update (third matcher-list)))))
             (if reply
-                (lparallel:fulfill (first fetcher-list) reply)
-                (push fetcher-list unresolved)))))
+                (lparallel:fulfill (first matcher-list) reply)
+                (push matcher-list unresolved)))))
       (setf reply-queue unresolved))))
 
 (defun make-bot (token)
@@ -254,25 +278,30 @@
                                         ;        CONVENIENCE INTERFACE        ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defmacro wrap-$ (&rest body)
+  "Wraps all forms following (:INLINE [$|$*] ...) into ([$|$*] ...)$."
+  (let* ((index
+           (position nil body
+                     :test #'(lambda (_ el)
+                               (declare (ignore _))
+                               (and (listp el) (eq (car el) :inline)
+                                  (or (eq (second el) '$*)
+                                     (eq (second el) '$))))))
+         (body  (mapcar #'(lambda (form)
+                           (if (listp form)
+                               `(wrap-$ ,@form)
+                               form))
+                       body)))
+    (if (and index (< index (1- (length body))))
+        `(,@(subseq body 0 index) ,(nconc (cddr (nth index body)) ( (subseq body (1+ index)))))
+        body)))
+
 (defun make-optional-body (body return-var return-val-sym)
   "Make the body part of the $ (api call macro)."
   (if body
       `(let ((,return-var ,return-val-sym))
-         (wrap-$ ,@body))
+         (wrap-$ body))
       return-val-sym))
-
-(defmacro wrap-$ (&rest body)
-  "Wraps all forms following (:INLINE [$|$*] ...) into ([$|$*] ...)$."
-  (let ((index
-          (position nil body
-                    :test #'(lambda (_ el)
-                              (declare (ignore _))
-                              (and (listp el) (eq (car el) :inline)
-                                 (or (eq (second el) '$*)
-                                    (eq (second el) '$)))))))
-    (if index
-        `(progn ,@(subseq body 0 index) ,(nconc (cdr (nth index body)) (subseq body (1+ index))))
-        `(progn ,@body))))
 
 (defun make-$-method-call (method bot args)
   "Generate a call to MAKE-REQUEST."
@@ -297,8 +326,8 @@
                 ,(if parallel
                      `(lparallel:future
                         (lparallel:force
-                         (add-reply-fetcher ,bot ,(cdr with-reply) (lparallel:force ,return-val-sym))))
-                     `(add-reply-fetcher ,bot ,(cdr with-reply) ,return-val-sym))))))
+                         (add-reply-matcher ,bot ,(cdr with-reply) (lparallel:force ,return-val-sym))))
+                     `(add-reply-matcher ,bot ,(cdr with-reply) ,return-val-sym))))))
       ,(make-optional-body body return-var return-val-sym))))
 
 
@@ -317,3 +346,19 @@
                                       (apply #'make-instance `(*inline-keyboard-button ,@key)))
                                   keys))
                       keys)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                        ;            Reply Matchers           ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Reply matchers all take an *UPDATE and an API request answer
+;; object.  They return nil if the *UPDATE is not the desired answer
+;; or otherwise an arbitrary value that will passed on as reply.
+
+(defun inline-keyboard-answer (update result)
+  "A reply matcher to use for inline keyboard messages. Yields a *CALLBACK-QUERY object."
+  (when (slot-boundp update 'callback--query)
+    (let ((cb (tg-callback--query update)))
+      (when (and cb (= (tg-message--id result)
+                     (tg-message--id (tg-message cb))))
+        cb))))
