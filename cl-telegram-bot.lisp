@@ -3,6 +3,7 @@
 ;; MIT License
 ;;
 ;; Copyright (c) 2016 Rei <https://github.com/sovietspaceship>
+;; Copyright (c) 2019 Hiro98 <https://protagon.space>
 ;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +33,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                         ;      Basic BOT Implementation       ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defclass bot ()
+
+(defclass tg-bot ()
   ((id
     :documentation "Update id"
     :initform 0
@@ -62,9 +64,10 @@
    (reply-queue
     :type (proper-list function)
     :documentation "A queue for storing reply matchers."
-    :initform nil)))
+    :initform nil))
+  (:documentation "The TG-BOT type is just a basic data container to hold various transactional data. It does not feature polling or any other advanced features. Only the TOKEN initarg is required."))
 
-(defmethod initialize-instance :after ((object bot) &key &allow-other-keys)
+(defmethod initialize-instance :after ((object tg-bot) &key &allow-other-keys)
   (with-accessors ((token         token)
                    (endpoint      endpoint)
                    (file-endpoint file-endpoint)
@@ -75,26 +78,26 @@
 (defgeneric add-reply-matcher (bot matcher result)
   (:documentation "Adds a reply matcher function that takes one argument of type *UPDATE and returns T if the update is the desired reply. Returns a PROMISE."))
 
-(defmethod add-reply-matcher ((bot bot) matcher result)
+(defmethod add-reply-matcher ((bot tg-bot) matcher result)
   (let ((promise (lparallel:promise)))
     (push `(,promise ,matcher ,result) (slot-value bot 'reply-queue))
     promise))
 
 (defgeneric add-update-hook (bot hook &optional key)
-  (:documentation "Adds an update hook that will be called with an array of *UPDATE objects on each update, the return value is ignored. Returns a keyword to remove that hook."))
+  (:documentation "Adds an update hook that will be called with an *UPDATE object on each update, the return value is ignored. Returns a keyword to remove that hook."))
 
-(defmethod add-update-hook ((bot bot) hook &optional key)
+(defmethod add-update-hook ((bot tg-bot) hook &optional key)
   (let ((final-key (if key key (gensym))))
     (with-slots (update-hooks) bot
       (when (and key (find key update-hooks :key #'car))
         (error (format nil "Hook with the key \"~a\" already registered." key)))
       (push `(,final-key . ,hook) (slot-value bot 'update-hooks)))
-    key))
+    final-key))
 
 (defgeneric remove-update-hook (bot key)
   (:documentation "Removes an update hook by its key which was returned open its registration. Returns t (success) or nil."))
 
-(defmethod remove-update-hook ((bot bot) key)
+(defmethod remove-update-hook ((bot tg-bot) key)
   (with-slots (update-hooks) bot
     (let ((pos (position key update-hooks :key #'car)))
       (when pos
@@ -108,23 +111,22 @@
 (defmethod process-updates :before (bot updates)
   (declare (type (vector *update) updates)))
 
-(defmethod process-updates ((bot bot) updates)
+(defmethod process-updates ((bot tg-bot) updates)
   (with-slots (reply-queue update-hooks) bot
-    (dolist (hook update-hooks)         ; process hooks
-      (funcall (cdr hook) updates))
-
     (let ((unresolved nil)) ;; Process reply-matchers
       (loop for update across updates do
         (dolist (matcher-list reply-queue)
           (let ((reply (apply (second matcher-list) (list update (third matcher-list)))))
             (if reply
                 (lparallel:fulfill (first matcher-list) reply)
-                (push matcher-list unresolved)))))
+                (push matcher-list unresolved))))
+        (dolist (hook update-hooks)     ; process hooks
+          (funcall (cdr hook) updates)))
       (setf reply-queue unresolved))))
 
-(defun make-bot (token)
-  "Create a new bot instance. Takes a token string."
-  (make-instance 'bot :token token))
+(defun make-tg-bot (token &optional api-url)
+  "Create a new TG-BOT instance. Takes a TOKEN string and optionally an API-URL string."
+  (make-instance 'tg-bot :token token :api-uri api-url))
 
 #+sbcl
 (defun get-class-slots (obj)
@@ -258,7 +260,8 @@
 (defgeneric fetch-updates (bot &key limit timeout)
   (:documentation "Fetches updates from the API. See https://core.telegram.org/bots/api#getupdates."))
 
-(defmethod fetch-updates ((b bot) &key limit timeout)
+(defmethod fetch-updates ((b tg-bot) &key limit (timeout 1))
+  (error "lol")
   (let* ((current-id (id b))
          (results ($ (get-updates
                       :limit limit
@@ -286,21 +289,16 @@
                                (declare (ignore _))
                                (and (listp el) (eq (car el) :inline)
                                   (or (eq (second el) '$*)
-                                     (eq (second el) '$))))))
-         (body  (mapcar #'(lambda (form)
-                           (if (listp form)
-                               `(wrap-$ ,@form)
-                               form))
-                       body)))
+                                     (eq (second el) '$)))))))
     (if (and index (< index (1- (length body))))
-        `(,@(subseq body 0 index) ,(nconc (cddr (nth index body)) ( (subseq body (1+ index)))))
-        body)))
+        `(progn ,@(subseq body 0 index) ,(concatenate 'list (cdr (nth index body)) (subseq body (1+ index))))
+        `(progn ,@body))))
 
 (defun make-optional-body (body return-var return-val-sym)
   "Make the body part of the $ (api call macro)."
   (if body
       `(let ((,return-var ,return-val-sym))
-         (wrap-$ body))
+         (wrap-$ ,@body))
       return-val-sym))
 
 (defun make-$-method-call (method bot args)
