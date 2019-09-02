@@ -58,14 +58,17 @@
     :documentation "HTTPS file-endpoint"
     :initform nil)
    (update-hooks
-    :documentation "A list of functions to call after retrieving updates by FETCH-UPDATES."
+    :documentation "A list of functions to call after retrieving
+    updates by FETCH-UPDATES."
     :type (proper-list function)
     :initform nil)
    (reply-queue
     :type (proper-list function)
     :documentation "A queue for storing reply matchers."
     :initform nil))
-  (:documentation "The TG-BOT type is just a basic data container to hold various transactional data. It does not feature polling or any other advanced features. Only the TOKEN initarg is required."))
+  (:documentation "The TG-BOT type is just a basic data container to
+  hold various transactional data. It does not feature polling or any
+  other advanced features. Only the TOKEN initarg is required."))
 
 (defmethod initialize-instance :after ((object tg-bot) &key &allow-other-keys)
   (with-accessors ((token         token)
@@ -75,16 +78,28 @@
     (setf endpoint      (concatenate 'string api-uri "bot" token "/")
           file-endpoint (concatenate 'string api-uri "file/" "bot" token "/"))))
 
-(defgeneric add-reply-matcher (bot matcher result)
-  (:documentation "Adds a reply matcher function that takes one argument of type *UPDATE and returns T if the update is the desired reply. Returns a PROMISE."))
+(define-condition reply-matcher-timeout-error (error)
+  ()
+  (:documentation "Gets signalled if a reply doesn't arive in time."))
 
-(defmethod add-reply-matcher ((bot tg-bot) matcher result)
+(defgeneric add-reply-matcher (bot matcher result timeout)
+  (:documentation "Adds a reply matcher function to BOT that takes an
+  object of type *UPDATE and the the result of the api-call RESULT as
+  arguments and returns non-nil if the update is the desired
+  reply. The reply matcher will be removed after TIMEOUT
+  seconds. Returns a PROMISE that resolves to either the return value
+  of MATCHER. An condition is signaled on timeout."))
+
+(defmethod add-reply-matcher ((bot tg-bot) matcher result &optional timeout)
   (let ((promise (lparallel:promise)))
-    (push `(,promise ,matcher ,result) (slot-value bot 'reply-queue))
+    (push `(,promise ,matcher ,result ,(when timeout (+ (get-universal-time) timeout)))
+          (slot-value bot 'reply-queue))
     promise))
 
 (defgeneric add-update-hook (bot hook &optional key)
-  (:documentation "Adds an update hook that will be called with an *UPDATE object on each update, the return value is ignored. Returns a keyword to remove that hook."))
+  (:documentation "Adds an update hook that will be called with an
+  *UPDATE object on each update, the return value is ignored. Returns
+  a keyword to remove that hook."))
 
 (defmethod add-update-hook ((bot tg-bot) hook &optional key)
   (let ((final-key (if key key (gensym))))
@@ -95,7 +110,8 @@
     final-key))
 
 (defgeneric remove-update-hook (bot key)
-  (:documentation "Removes an update hook by its key which was returned open its registration. Returns t (success) or nil."))
+  (:documentation "Removes an update hook by its key which was
+  returned open its registration. Returns t (success) or nil."))
 
 (defmethod remove-update-hook ((bot tg-bot) key)
   (with-slots (update-hooks) bot
@@ -111,29 +127,39 @@
 (defmethod process-updates :before (bot updates)
   (declare (type (vector *update) updates)))
 
+(defun read-new-timeout ()
+   (format t "Enter a new timeout: ")
+   (multiple-value-list (eval (read))))
+
+;; TODO: make slimm with functions
 (defmethod process-updates ((bot tg-bot) updates)
   (with-slots (reply-queue update-hooks) bot
     (let ((unresolved nil)) ;; Process reply-matchers
       (loop for update across updates do
         (dolist (matcher-list reply-queue)
-          (let ((reply (apply (second matcher-list) (list update (third matcher-list)))))
-            (if reply
-                (lparallel:fulfill (first matcher-list) reply)
-                (push matcher-list unresolved))))
+          (destructuring-bind (promise matcher result timeout) matcher-list
+            (let ((reply (apply matcher (list update result))))
+              (if (or (not timeout) (> timeout (get-universal-time)))
+                  (if reply
+                      (lparallel:fulfill promise reply)
+                      (push matcher-list unresolved))
+                  (restart-case (error 'reply-matcher-timeout-error)
+                    (remove-handler () nil)
+                    (reset-timeout (new-timeout)
+                      :interactive read-new-timeout
+                      (progn
+                        (setf (fourth matcher-list) (+ (get-universal-time) new-timeout))
+                        (push matcher-list unresolved))))))))
         (dolist (hook update-hooks)     ; process hooks
           (funcall (cdr hook) updates)))
       (setf reply-queue unresolved))))
 
 (defun make-tg-bot (token &optional api-url)
   "Create a new TG-BOT instance. Takes a TOKEN string and optionally an API-URL string."
-  (make-instance 'tg-bot :token token :api-uri api-url))
-
-#+sbcl
-(defun get-class-slots (obj)
-  "Get a list of class slots, useful to inspect Fluid classes. SBCL only."
-  (mapcar #'sb-mop:slot-definition-name
-          (sb-mop:class-slots
-           (class-of obj))))
+  (let ((args (if api-url
+                  `(:token ,token :api-url api-url)
+                  `(:token ,token))))
+    (apply #'make-instance `(tg-bot ,@args))))
 
 (defun recursive-change-class (object class)
   "Casts and object and its members into the telegram specific classes."
@@ -163,8 +189,8 @@
                                         ;               HELPERS               ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun make-request (b name options &key (return-type nil))
-  "Perform HTTP request to 'name API method with 'options JSON-encoded object."
+(defun make-request (b name options &key (return-type nil) (timeout 10))
+  "Perform HTTP request to NAME API method with OPTIONS JSON-encoded object."
   (let* ((results (multiple-value-list
                    (handler-bind ((dex:http-request-bad-request #'dex:ignore-and-continue))
                      (dex:request
@@ -172,6 +198,7 @@
                       :method :post
                       :want-stream t
                       :headers '(("Content-Type" . "Application/Json"))
+                      :timeout timeout
                       :content (json:encode-json-alist-to-string options)))))
          (message (nth 0 results)))
 
@@ -261,13 +288,12 @@
   (:documentation "Fetches updates from the API. See https://core.telegram.org/bots/api#getupdates."))
 
 (defmethod fetch-updates ((b tg-bot) &key limit (timeout 1))
-  (error "lol")
   (let* ((current-id (id b))
          (results ($ (get-updates
                       :limit limit
                       :timeout timeout
                       :offset current-id)
-                      (:bot b))))
+                      (:bot b :timeout (1+ timeout)))))
     (when (> (length results) 0)
       (let ((id (get-latest-update-id results)))
         (setf (id b) id)
@@ -301,31 +327,31 @@
          (wrap-$ ,@body))
       return-val-sym))
 
-(defun make-$-method-call (method bot args)
+(defun make-$-method-call (method bot args timeout)
   "Generate a call to MAKE-REQUEST."
-  `(apply #'make-request (cons ,bot (,method ,@args))))
+  `(apply #'make-request (nconc (list ,bot) (,method ,@args) (list :timeout ,timeout))))
 
 (defmacro $* ((method &rest args) &body body)
   "Call api method with standard BOT and RESULT-VAR. See $."
   `($ (,method ,@args) () ,@body))
 
 (defmacro $ ((method &rest args)
-             (&key (bot '*bot*) (return-var +return-var+) (parallel nil) (with-reply nil))
+             (&key (bot '*bot*) (return-var +return-var+) (parallel nil) (with-reply nil) (timeout 10))
              &body body)
   "Call an API method. If a body is given the result of the call will be bound to RETURN-VAR and the body will be included. Subsequent calls to $ can be inlined like ($ ... FORMS (:INLINE $ ...) FORMS*) => ($ ... FORMS ($ ... FORMS*))."
   (when (not (find method *api-methods*)) (error "No such API method."))
   (let ((return-val-sym (gensym)))
     `(let* ((,return-val-sym ,(if parallel
-                                `(lparallel:future ,(make-$-method-call method bot args))
-                                (make-$-method-call method bot args)))
-          ,@(when with-reply
-             (check-type with-reply cons)
-             `((,(car with-reply)
-                ,(if parallel
-                     `(lparallel:future
-                        (lparallel:force
-                         (add-reply-matcher ,bot ,(cdr with-reply) (lparallel:force ,return-val-sym))))
-                     `(add-reply-matcher ,bot ,(cdr with-reply) ,return-val-sym))))))
+                                `(lparallel:future ,(make-$-method-call method bot args timeout))
+                                (make-$-method-call method bot args timeout)))
+            ,@(when with-reply
+                (destructuring-bind (reply-sym matcher &key timeout) with-reply
+                  `((,reply-sym
+                     ,(if parallel
+                          `(lparallel:future
+                             (lparallel:force
+                              (add-reply-matcher ,bot ,matcher (lparallel:force ,return-val-sym) ,timeout)))
+                          `(add-reply-matcher ,bot ,matcher ,return-val-sym ,timeout)))))))
       ,(make-optional-body body return-var return-val-sym))))
 
 
