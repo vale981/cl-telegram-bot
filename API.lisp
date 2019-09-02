@@ -1,4 +1,5 @@
 ; DO NOT EDIT, AUTO GENERATED
+
 (IN-PACKAGE :CL-TELEGRAM-BOT)
 (DEFPARAMETER *API-TYPES*
   '(*UPDATE *WEBHOOK-INFO *USER *CHAT *MESSAGE *MESSAGE-ENTITY *PHOTO-SIZE
@@ -85,6 +86,7 @@
             "New poll state. Bots receive only updates about stopped polls and polls, which are sent by the bot"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#update
 This object represents an incoming update.At most one of the optional parameters can be present in any given update."))
+(EXPORT '*UPDATE)
 
 (DEFUN GET-UPDATES (&KEY OFFSET LIMIT TIMEOUT ALLOWED--UPDATES)
   "https://core.telegram.org/bots/api#getupdates
@@ -98,6 +100,7 @@ Use this method to receive incoming updates using long polling (wiki). An Array 
       (SETF OPTIONS
               (NCONC OPTIONS (LIST (CONS :ALLOWED_UPDATES ALLOWED--UPDATES)))))
     (LIST "getUpdates" OPTIONS :RETURN-TYPE '*UPDATE)))
+(EXPORT 'GET-UPDATES)
 
 (DEFUN SET-WEBHOOK (URL &KEY CERTIFICATE MAX--CONNECTIONS ALLOWED--UPDATES)
   "https://core.telegram.org/bots/api#setwebhook
@@ -113,18 +116,21 @@ Use this method to specify a url and receive incoming updates via an outgoing we
       (SETF OPTIONS
               (NCONC OPTIONS (LIST (CONS :ALLOWED_UPDATES ALLOWED--UPDATES)))))
     (LIST "setWebhook" OPTIONS)))
+(EXPORT 'SET-WEBHOOK)
 
 (DEFUN DELETE-WEBHOOK ()
   "https://core.telegram.org/bots/api#deletewebhook
 Use this method to remove webhook integration if you decide to switch back to getUpdates. Returns True on success. Requires no parameters."
   (LET ((OPTIONS (LIST)))
     (LIST "deleteWebhook" OPTIONS)))
+(EXPORT 'DELETE-WEBHOOK)
 
 (DEFUN GET-WEBHOOK-INFO ()
   "https://core.telegram.org/bots/api#getwebhookinfo
 Use this method to get current webhook status. Requires no parameters. On success, returns a WebhookInfo object. If the bot is using getUpdates, will return an object with the url field empty."
   (LET ((OPTIONS (LIST)))
     (LIST "getWebhookInfo" OPTIONS :RETURN-TYPE '*WEBHOOK-INFO)))
+(EXPORT 'GET-WEBHOOK-INFO)
 
 (DEFCLASS *WEBHOOK-INFO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "WebhookInfo")
@@ -152,6 +158,7 @@ Use this method to get current webhook status. Requires no parameters. On succes
             "A list of update types the bot is subscribed to. Defaults to all update types"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#webhookinfo
 Contains information about the current status of a webhook."))
+(EXPORT '*WEBHOOK-INFO)
 
 
 ;----Available types----
@@ -173,6 +180,7 @@ Contains information about the current status of a webhook."))
             "IETF language tag of the user's language"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#user
 This object represents a Telegram user or bot."))
+(EXPORT '*USER)
 
 (DEFCLASS *CHAT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Chat")
@@ -215,6 +223,7 @@ This object represents a Telegram user or bot."))
             "True, if the bot can change the group sticker set. Returned only in getChat."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#chat
 This object represents a chat."))
+(EXPORT '*CHAT)
 
 (DEFCLASS *MESSAGE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Message")
@@ -352,6 +361,7 @@ This object represents a chat."))
             "Inline keyboard attached to the message. login_url buttons are represented as ordinary url buttons."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#message
 This object represents a message."))
+(EXPORT '*MESSAGE)
 
 (DEFCLASS *MESSAGE-ENTITY NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -371,6 +381,7 @@ This object represents a message."))
             "For “text_mention” only, the mentioned user"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#messageentity
 This object represents one special entity in a text message. For example, hashtags, usernames, URLs, etc."))
+(EXPORT '*MESSAGE-ENTITY)
 
 (DEFCLASS *PHOTO-SIZE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "PhotoSize")
@@ -384,6 +395,7 @@ This object represents one special entity in a text message. For example, hashta
             INTEGER :DOCUMENTATION "File size"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#photosize
 This object represents one size of a photo or a file / sticker thumbnail."))
+(EXPORT '*PHOTO-SIZE)
 
 (DEFCLASS *AUDIO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Audio")
@@ -407,6 +419,7 @@ This object represents one size of a photo or a file / sticker thumbnail."))
             "Thumbnail of the album cover to which the music file belongs"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#audio
 This object represents an audio file to be treated as music by the Telegram clients."))
+(EXPORT '*AUDIO)
 
 (DEFCLASS *DOCUMENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Document")
@@ -422,6 +435,7 @@ This object represents an audio file to be treated as music by the Telegram clie
             INTEGER :DOCUMENTATION "File size"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#document
 This object represents a general file (as opposed to photos, voice messages and audio files)."))
+(EXPORT '*DOCUMENT)
 
 (DEFCLASS *VIDEO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Video")
@@ -442,6 +456,7 @@ This object represents a general file (as opposed to photos, voice messages and 
             INTEGER :DOCUMENTATION "File size"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#video
 This object represents a video file."))
+(EXPORT '*VIDEO)
 
 (DEFCLASS *ANIMATION NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Animation")
@@ -465,6 +480,7 @@ This object represents a video file."))
             INTEGER :DOCUMENTATION "File size"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#animation
 This object represents an animation file (GIF or H.264/MPEG-4 AVC video without sound)."))
+(EXPORT '*ANIMATION)
 
 (DEFCLASS *VOICE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Voice")
@@ -479,6 +495,7 @@ This object represents an animation file (GIF or H.264/MPEG-4 AVC video without 
             INTEGER :DOCUMENTATION "File size"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#voice
 This object represents a voice note."))
+(EXPORT '*VOICE)
 
 (DEFCLASS *VIDEO-NOTE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "VideoNote")
@@ -496,6 +513,7 @@ This object represents a voice note."))
             INTEGER :DOCUMENTATION "File size"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#videonote
 This object represents a video message (available in Telegram apps as of v.4.0)."))
+(EXPORT '*VIDEO-NOTE)
 
 (DEFCLASS *CONTACT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Contact")
@@ -513,6 +531,7 @@ This object represents a video message (available in Telegram apps as of v.4.0).
             "Additional data about the contact in the form of a vCard"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#contact
 This object represents a phone contact."))
+(EXPORT '*CONTACT)
 
 (DEFCLASS *LOCATION NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Location")
@@ -522,6 +541,7 @@ This object represents a phone contact."))
             :TYPE *FLOAT :DOCUMENTATION "Latitude as defined by sender"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#location
 This object represents a point on the map."))
+(EXPORT '*LOCATION)
 
 (DEFCLASS *VENUE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Venue")
@@ -538,6 +558,7 @@ This object represents a point on the map."))
             "Foursquare type of the venue. (For example, “arts_entertainment/default”, “arts_entertainment/aquarium” or “food/icecream”.)"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#venue
 This object represents a venue."))
+(EXPORT '*VENUE)
 
 (DEFCLASS *POLL-OPTION NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "PollOption")
@@ -548,6 +569,7 @@ This object represents a venue."))
             "Number of users that voted for this option"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#polloption
 This object contains information about one answer option in a poll."))
+(EXPORT '*POLL-OPTION)
 
 (DEFCLASS *POLL NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Poll")
@@ -562,6 +584,7 @@ This object contains information about one answer option in a poll."))
             "True, if the poll is closed"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#poll
 This object contains information about a poll."))
+(EXPORT '*POLL)
 
 (DEFCLASS *USER-PROFILE-PHOTOS NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -574,6 +597,7 @@ This object contains information about a poll."))
             "Requested profile pictures (in up to 4 sizes each)"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#userprofilephotos
 This object represent a user's profile pictures."))
+(EXPORT '*USER-PROFILE-PHOTOS)
 
 (DEFCLASS *FILE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "File")
@@ -586,6 +610,7 @@ This object represent a user's profile pictures."))
             "File path. Use https://api.telegram.org/file/bot<token>/<file_path> to get the file."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#file
 This object represents a file ready to be downloaded. The file can be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>. It is guaranteed that the link will be valid for at least 1 hour. When the link expires, a new one can be requested by calling getFile."))
+(EXPORT '*FILE)
 
 (DEFCLASS *REPLY-KEYBOARD-MARKUP NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -605,6 +630,7 @@ This object represents a file ready to be downloaded. The file can be downloaded
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#replykeyboardmarkup
 This object represents a custom keyboard with reply options (see Introduction to bots for details and examples)."))
+(EXPORT '*REPLY-KEYBOARD-MARKUP)
 
 (DEFCLASS *KEYBOARD-BUTTON NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -620,6 +646,7 @@ This object represents a custom keyboard with reply options (see Introduction to
             "If True, the user's current location will be sent when the button is pressed. Available in private chats only"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#keyboardbutton
 This object represents one button of the reply keyboard. For simple text buttons String can be used instead of this object to specify text of the button. Optional fields are mutually exclusive."))
+(EXPORT '*KEYBOARD-BUTTON)
 
 (DEFCLASS *REPLY-KEYBOARD-REMOVE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -633,6 +660,7 @@ This object represents one button of the reply keyboard. For simple text buttons
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#replykeyboardremove
 Upon receiving a message with this object, Telegram clients will remove the current custom keyboard and display the default letter-keyboard. By default, custom keyboards are displayed until a new keyboard is sent by a bot. An exception is made for one-time keyboards that are hidden immediately after the user presses a button (see ReplyKeyboardMarkup)."))
+(EXPORT '*REPLY-KEYBOARD-REMOVE)
 
 (DEFCLASS *INLINE-KEYBOARD-MARKUP NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -644,6 +672,7 @@ Upon receiving a message with this object, Telegram clients will remove the curr
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinekeyboardmarkup
 This object represents an inline keyboard that appears right next to the message it belongs to."))
+(EXPORT '*INLINE-KEYBOARD-MARKUP)
 
 (DEFCLASS *INLINE-KEYBOARD-BUTTON NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -673,6 +702,7 @@ This object represents an inline keyboard that appears right next to the message
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinekeyboardbutton
 This object represents one button of an inline keyboard. You must use exactly one of the optional fields."))
+(EXPORT '*INLINE-KEYBOARD-BUTTON)
 
 (DEFCLASS *LOGIN-URL NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "LoginUrl")
@@ -690,6 +720,7 @@ This object represents one button of an inline keyboard. You must use exactly on
             "Pass True to request the permission for your bot to send messages to the user."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#loginurl
 This object represents a parameter of the inline keyboard button used to automatically authorize a user. Serves as a great replacement for the Telegram Login Widget when the user is coming from Telegram. All the user needs to do is tap/click a button and confirm that they want to log in:"))
+(EXPORT '*LOGIN-URL)
 
 (DEFCLASS *CALLBACK-QUERY NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -714,6 +745,7 @@ This object represents a parameter of the inline keyboard button used to automat
             "Short name of a Game to be returned, serves as the unique identifier for the game"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#callbackquery
 This object represents an incoming callback query from a callback button in an inline keyboard. If the button that originated the query was attached to a message sent by the bot, the field message will be present. If the button was attached to a message sent via the bot (in inline mode), the field inline_message_id will be present. Exactly one of the fields data or game_short_name will be present."))
+(EXPORT '*CALLBACK-QUERY)
 
 (DEFCLASS *FORCE-REPLY NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "ForceReply")
@@ -725,6 +757,7 @@ This object represents an incoming callback query from a callback button in an i
             "Use this parameter if you want to force reply from specific users only. Targets: 1) users that are @mentioned in the text of the Message object; 2) if the bot's message is a reply (has reply_to_message_id), sender of the original message."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#forcereply
 Upon receiving a message with this object, Telegram clients will display a reply interface to the user (act as if the user has selected the bot‘s message and tapped ’Reply'). This can be extremely useful if you want to create user-friendly step-by-step interfaces without having to sacrifice privacy mode."))
+(EXPORT '*FORCE-REPLY)
 
 (DEFCLASS *CHAT-PHOTO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "ChatPhoto")
@@ -736,6 +769,7 @@ Upon receiving a message with this object, Telegram clients will display a reply
             "File identifier of big (640x640) chat photo. This file_id can be used only for photo download and only for as long as the photo is not changed."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#chatphoto
 This object represents a chat photo."))
+(EXPORT '*CHAT-PHOTO)
 
 (DEFCLASS *CHAT-MEMBER NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "ChatMember")
@@ -797,6 +831,7 @@ This object represents a chat photo."))
             "Restricted only. True, if the user is allowed to add web page previews to their messages"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#chatmember
 This object contains information about one member of a chat."))
+(EXPORT '*CHAT-MEMBER)
 
 (DEFCLASS *CHAT-PERMISSIONS NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -830,6 +865,7 @@ This object contains information about one member of a chat."))
             "True, if the user is allowed to pin messages. Ignored in public supergroups"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#chatpermissions
 Describes actions that a non-administrator user is allowed to take in a chat."))
+(EXPORT '*CHAT-PERMISSIONS)
 
 (DEFCLASS *RESPONSE-PARAMETERS NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -842,6 +878,7 @@ Describes actions that a non-administrator user is allowed to take in a chat."))
             "In case of exceeding flood control, the number of seconds left to wait before the request can be repeated"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#responseparameters
 Contains information about why a request was unsuccessful."))
+(EXPORT '*RESPONSE-PARAMETERS)
 
 (DEFCLASS *INPUT-MEDIA-PHOTO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -859,6 +896,7 @@ Contains information about why a request was unsuccessful."))
             "Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#inputmediaphoto
 Represents a photo to be sent."))
+(EXPORT '*INPUT-MEDIA-PHOTO)
 
 (DEFCLASS *INPUT-MEDIA-VIDEO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -888,6 +926,7 @@ Represents a photo to be sent."))
             "Pass True, if the uploaded video is suitable for streaming"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#inputmediavideo
 Represents a video to be sent."))
+(EXPORT '*INPUT-MEDIA-VIDEO)
 
 (DEFCLASS *INPUT-MEDIA-ANIMATION NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -915,6 +954,7 @@ Represents a video to be sent."))
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inputmediaanimation
 Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be sent."))
+(EXPORT '*INPUT-MEDIA-ANIMATION)
 
 (DEFCLASS *INPUT-MEDIA-AUDIO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -941,6 +981,7 @@ Represents an animation file (GIF or H.264/MPEG-4 AVC video without sound) to be
             :DOCUMENTATION "Title of the audio"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#inputmediaaudio
 Represents an audio file to be treated as music to be sent."))
+(EXPORT '*INPUT-MEDIA-AUDIO)
 
 (DEFCLASS *INPUT-MEDIA-DOCUMENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -961,6 +1002,7 @@ Represents an audio file to be treated as music to be sent."))
             "Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#inputmediadocument
 Represents a general file to be sent."))
+(EXPORT '*INPUT-MEDIA-DOCUMENT)
 
 
 ;----Available methods----
@@ -969,6 +1011,7 @@ Represents a general file to be sent."))
 A simple method for testing your bot's auth token. Requires no parameters. Returns basic information about the bot in form of a User object."
   (LET ((OPTIONS (LIST)))
     (LIST "getMe" OPTIONS :RETURN-TYPE '*USER)))
+(EXPORT 'GET-ME)
 
 (DEFUN SEND-MESSAGE
        (CHAT--ID TEXT
@@ -1000,6 +1043,7 @@ Use this method to send text messages. On success, the sent Message is returned.
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendMessage" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-MESSAGE)
 
 (DEFUN FORWARD-MESSAGE
        (CHAT--ID FROM--CHAT--ID MESSAGE--ID &KEY DISABLE--NOTIFICATION)
@@ -1017,6 +1061,7 @@ Use this method to forward messages of any kind. On success, the sent Message is
                      (LIST
                       (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
     (LIST "forwardMessage" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'FORWARD-MESSAGE)
 
 (DEFUN SEND-PHOTO
        (CHAT--ID PHOTO
@@ -1044,6 +1089,7 @@ Use this method to send photos. On success, the sent Message is returned."
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendPhoto" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-PHOTO)
 
 (DEFUN SEND-AUDIO
        (CHAT--ID AUDIO
@@ -1077,6 +1123,7 @@ Use this method to send audio files, if you want Telegram clients to display the
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendAudio" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-AUDIO)
 
 (DEFUN SEND-DOCUMENT
        (CHAT--ID DOCUMENT
@@ -1105,6 +1152,7 @@ Use this method to send general files. On success, the sent Message is returned.
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendDocument" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-DOCUMENT)
 
 (DEFUN SEND-VIDEO
        (CHAT--ID VIDEO
@@ -1142,6 +1190,7 @@ Use this method to send video files, Telegram clients support mp4 videos (other 
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendVideo" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-VIDEO)
 
 (DEFUN SEND-ANIMATION
        (CHAT--ID ANIMATION
@@ -1174,6 +1223,7 @@ Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without s
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendAnimation" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-ANIMATION)
 
 (DEFUN SEND-VOICE
        (CHAT--ID VOICE
@@ -1203,6 +1253,7 @@ Use this method to send audio files, if you want Telegram clients to display the
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendVoice" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-VOICE)
 
 (DEFUN SEND-VIDEO-NOTE
        (CHAT--ID VIDEO--NOTE
@@ -1231,6 +1282,7 @@ As of v.4.0, Telegram clients support rounded square mp4 videos of up to 1 minut
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendVideoNote" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-VIDEO-NOTE)
 
 (DEFUN SEND-MEDIA-GROUP
        (CHAT--ID MEDIA &KEY DISABLE--NOTIFICATION REPLY--TO--MESSAGE--ID)
@@ -1250,6 +1302,7 @@ Use this method to send a group of photos or videos as an album. On success, an 
                      (LIST
                       (CONS :REPLY_TO_MESSAGE_ID REPLY--TO--MESSAGE--ID)))))
     (LIST "sendMediaGroup" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-MEDIA-GROUP)
 
 (DEFUN SEND-LOCATION
        (CHAT--ID LATITUDE LONGITUDE
@@ -1278,6 +1331,7 @@ Use this method to send point on the map. On success, the sent Message is return
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendLocation" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-LOCATION)
 
 (DEFUN EDIT-MESSAGE-LIVE-LOCATION
        (LATITUDE LONGITUDE
@@ -1298,6 +1352,7 @@ Use this method to edit live location messages. A location can be edited until i
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "editMessageLiveLocation" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'EDIT-MESSAGE-LIVE-LOCATION)
 
 (DEFUN STOP-MESSAGE-LIVE-LOCATION
        (&KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
@@ -1315,6 +1370,7 @@ Use this method to stop updating a live location message before live_period expi
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "stopMessageLiveLocation" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'STOP-MESSAGE-LIVE-LOCATION)
 
 (DEFUN SEND-VENUE
        (CHAT--ID LATITUDE LONGITUDE TITLE ADDRESS
@@ -1350,6 +1406,7 @@ Use this method to send information about a venue. On success, the sent Message 
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendVenue" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-VENUE)
 
 (DEFUN SEND-CONTACT
        (CHAT--ID PHONE--NUMBER FIRST--NAME
@@ -1379,6 +1436,7 @@ Use this method to send phone contacts. On success, the sent Message is returned
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendContact" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-CONTACT)
 
 (DEFUN SEND-POLL
        (CHAT--ID QUESTION OPTIONS
@@ -1404,6 +1462,7 @@ Use this method to send a native poll. A native poll can't be sent to a private 
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendPoll" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-POLL)
 
 (DEFUN SEND-CHAT-ACTION (CHAT--ID ACTION)
   "https://core.telegram.org/bots/api#sendchataction
@@ -1412,6 +1471,7 @@ Use this method when you need to tell the user that something is happening on th
   (CHECK-TYPE ACTION STRING)
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :ACTION ACTION))))
     (LIST "sendChatAction" OPTIONS)))
+(EXPORT 'SEND-CHAT-ACTION)
 
 (DEFUN GET-USER-PROFILE-PHOTOS (USER--ID &KEY OFFSET LIMIT)
   "https://core.telegram.org/bots/api#getuserprofilephotos
@@ -1421,6 +1481,7 @@ Use this method to get a list of profile pictures for a user. Returns a UserProf
     (WHEN OFFSET (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :OFFSET OFFSET)))))
     (WHEN LIMIT (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :LIMIT LIMIT)))))
     (LIST "getUserProfilePhotos" OPTIONS :RETURN-TYPE '*USER-PROFILE-PHOTOS)))
+(EXPORT 'GET-USER-PROFILE-PHOTOS)
 
 (DEFUN GET-FILE (FILE--ID)
   "https://core.telegram.org/bots/api#getfile
@@ -1428,6 +1489,7 @@ Use this method to get basic info about a file and prepare it for downloading. F
   (CHECK-TYPE FILE--ID STRING)
   (LET ((OPTIONS (LIST (CONS :FILE_ID FILE--ID))))
     (LIST "getFile" OPTIONS :RETURN-TYPE '*FILE)))
+(EXPORT 'GET-FILE)
 
 (DEFUN KICK-CHAT-MEMBER (CHAT--ID USER--ID &KEY UNTIL--DATE)
   "https://core.telegram.org/bots/api#kickchatmember
@@ -1438,6 +1500,7 @@ Use this method to kick a user from a group, a supergroup or a channel. In the c
     (WHEN UNTIL--DATE
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :UNTIL_DATE UNTIL--DATE)))))
     (LIST "kickChatMember" OPTIONS)))
+(EXPORT 'KICK-CHAT-MEMBER)
 
 (DEFUN UNBAN-CHAT-MEMBER (CHAT--ID USER--ID)
   "https://core.telegram.org/bots/api#unbanchatmember
@@ -1446,6 +1509,7 @@ Use this method to unban a previously kicked user in a supergroup or channel. Th
   (CHECK-TYPE USER--ID INTEGER)
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
     (LIST "unbanChatMember" OPTIONS)))
+(EXPORT 'UNBAN-CHAT-MEMBER)
 
 (DEFUN RESTRICT-CHAT-MEMBER (CHAT--ID USER--ID PERMISSIONS &KEY UNTIL--DATE)
   "https://core.telegram.org/bots/api#restrictchatmember
@@ -1459,6 +1523,7 @@ Use this method to restrict a user in a supergroup. The bot must be an administr
     (WHEN UNTIL--DATE
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :UNTIL_DATE UNTIL--DATE)))))
     (LIST "restrictChatMember" OPTIONS)))
+(EXPORT 'RESTRICT-CHAT-MEMBER)
 
 (DEFUN PROMOTE-CHAT-MEMBER
        (CHAT--ID USER--ID
@@ -1506,6 +1571,7 @@ Use this method to promote or demote a user in a supergroup or a channel. The bo
                      (LIST
                       (CONS :CAN_PROMOTE_MEMBERS CAN--PROMOTE--MEMBERS)))))
     (LIST "promoteChatMember" OPTIONS)))
+(EXPORT 'PROMOTE-CHAT-MEMBER)
 
 (DEFUN SET-CHAT-PERMISSIONS (CHAT--ID PERMISSIONS)
   "https://core.telegram.org/bots/api#setchatpermissions
@@ -1515,6 +1581,7 @@ Use this method to set default chat permissions for all members. The bot must be
   (LET ((OPTIONS
          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PERMISSIONS PERMISSIONS))))
     (LIST "setChatPermissions" OPTIONS)))
+(EXPORT 'SET-CHAT-PERMISSIONS)
 
 (DEFUN EXPORT-CHAT-INVITE-LINK (CHAT--ID)
   "https://core.telegram.org/bots/api#exportchatinvitelink
@@ -1522,6 +1589,7 @@ Use this method to generate a new invite link for a chat; any previously generat
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "exportChatInviteLink" OPTIONS)))
+(EXPORT 'EXPORT-CHAT-INVITE-LINK)
 
 (DEFUN SET-CHAT-PHOTO (CHAT--ID PHOTO)
   "https://core.telegram.org/bots/api#setchatphoto
@@ -1530,6 +1598,7 @@ Use this method to set a new profile photo for the chat. Photos can't be changed
   (CHECK-TYPE PHOTO *INPUT-FILE)
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :PHOTO PHOTO))))
     (LIST "setChatPhoto" OPTIONS)))
+(EXPORT 'SET-CHAT-PHOTO)
 
 (DEFUN DELETE-CHAT-PHOTO (CHAT--ID)
   "https://core.telegram.org/bots/api#deletechatphoto
@@ -1537,6 +1606,7 @@ Use this method to delete a chat photo. Photos can't be changed for private chat
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "deleteChatPhoto" OPTIONS)))
+(EXPORT 'DELETE-CHAT-PHOTO)
 
 (DEFUN SET-CHAT-TITLE (CHAT--ID TITLE)
   "https://core.telegram.org/bots/api#setchattitle
@@ -1545,6 +1615,7 @@ Use this method to change the title of a chat. Titles can't be changed for priva
   (CHECK-TYPE TITLE STRING)
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :TITLE TITLE))))
     (LIST "setChatTitle" OPTIONS)))
+(EXPORT 'SET-CHAT-TITLE)
 
 (DEFUN SET-CHAT-DESCRIPTION (CHAT--ID &KEY DESCRIPTION)
   "https://core.telegram.org/bots/api#setchatdescription
@@ -1554,6 +1625,7 @@ Use this method to change the description of a group, a supergroup or a channel.
     (WHEN DESCRIPTION
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :DESCRIPTION DESCRIPTION)))))
     (LIST "setChatDescription" OPTIONS)))
+(EXPORT 'SET-CHAT-DESCRIPTION)
 
 (DEFUN PIN-CHAT-MESSAGE (CHAT--ID MESSAGE--ID &KEY DISABLE--NOTIFICATION)
   "https://core.telegram.org/bots/api#pinchatmessage
@@ -1568,6 +1640,7 @@ Use this method to pin a message in a group, a supergroup, or a channel. The bot
                      (LIST
                       (CONS :DISABLE_NOTIFICATION DISABLE--NOTIFICATION)))))
     (LIST "pinChatMessage" OPTIONS)))
+(EXPORT 'PIN-CHAT-MESSAGE)
 
 (DEFUN UNPIN-CHAT-MESSAGE (CHAT--ID)
   "https://core.telegram.org/bots/api#unpinchatmessage
@@ -1575,6 +1648,7 @@ Use this method to unpin a message in a group, a supergroup, or a channel. The b
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "unpinChatMessage" OPTIONS)))
+(EXPORT 'UNPIN-CHAT-MESSAGE)
 
 (DEFUN LEAVE-CHAT (CHAT--ID)
   "https://core.telegram.org/bots/api#leavechat
@@ -1582,6 +1656,7 @@ Use this method for your bot to leave a group, supergroup or channel. Returns Tr
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "leaveChat" OPTIONS)))
+(EXPORT 'LEAVE-CHAT)
 
 (DEFUN GET-CHAT (CHAT--ID)
   "https://core.telegram.org/bots/api#getchat
@@ -1589,6 +1664,7 @@ Use this method to get up to date information about the chat (current name of th
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "getChat" OPTIONS :RETURN-TYPE '*CHAT)))
+(EXPORT 'GET-CHAT)
 
 (DEFUN GET-CHAT-ADMINISTRATORS (CHAT--ID)
   "https://core.telegram.org/bots/api#getchatadministrators
@@ -1596,6 +1672,7 @@ Use this method to get a list of administrators in a chat. On success, returns a
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "getChatAdministrators" OPTIONS :RETURN-TYPE '*CHAT-MEMBER)))
+(EXPORT 'GET-CHAT-ADMINISTRATORS)
 
 (DEFUN GET-CHAT-MEMBERS-COUNT (CHAT--ID)
   "https://core.telegram.org/bots/api#getchatmemberscount
@@ -1603,6 +1680,7 @@ Use this method to get the number of members in a chat. Returns Int on success."
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "getChatMembersCount" OPTIONS)))
+(EXPORT 'GET-CHAT-MEMBERS-COUNT)
 
 (DEFUN GET-CHAT-MEMBER (CHAT--ID USER--ID)
   "https://core.telegram.org/bots/api#getchatmember
@@ -1611,6 +1689,7 @@ Use this method to get information about a member of a chat. Returns a ChatMembe
   (CHECK-TYPE USER--ID INTEGER)
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID) (CONS :USER_ID USER--ID))))
     (LIST "getChatMember" OPTIONS :RETURN-TYPE '*CHAT-MEMBER)))
+(EXPORT 'GET-CHAT-MEMBER)
 
 (DEFUN SET-CHAT-STICKER-SET (CHAT--ID STICKER--SET--NAME)
   "https://core.telegram.org/bots/api#setchatstickerset
@@ -1621,6 +1700,7 @@ Use this method to set a new group sticker set for a supergroup. The bot must be
          (LIST (CONS :CHAT_ID CHAT--ID)
                (CONS :STICKER_SET_NAME STICKER--SET--NAME))))
     (LIST "setChatStickerSet" OPTIONS :RETURN-TYPE 'GET-CHAT)))
+(EXPORT 'SET-CHAT-STICKER-SET)
 
 (DEFUN DELETE-CHAT-STICKER-SET (CHAT--ID)
   "https://core.telegram.org/bots/api#deletechatstickerset
@@ -1628,6 +1708,7 @@ Use this method to delete a group sticker set from a supergroup. The bot must be
   (CHECK-TYPE CHAT--ID (OR INTEGER STRING))
   (LET ((OPTIONS (LIST (CONS :CHAT_ID CHAT--ID))))
     (LIST "deleteChatStickerSet" OPTIONS :RETURN-TYPE 'GET-CHAT)))
+(EXPORT 'DELETE-CHAT-STICKER-SET)
 
 (DEFUN ANSWER-CALLBACK-QUERY
        (CALLBACK--QUERY--ID &KEY TEXT SHOW--ALERT URL CACHE--TIME)
@@ -1642,6 +1723,7 @@ Use this method to send answers to callback queries sent from inline keyboards. 
     (WHEN CACHE--TIME
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :CACHE_TIME CACHE--TIME)))))
     (LIST "answerCallbackQuery" OPTIONS)))
+(EXPORT 'ANSWER-CALLBACK-QUERY)
 
 
 ;----Updating messages----
@@ -1672,6 +1754,7 @@ Use this method to edit text and game messages. On success, if edited message is
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "editMessageText" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'EDIT-MESSAGE-TEXT)
 
 (DEFUN EDIT-MESSAGE-CAPTION
        (
@@ -1695,6 +1778,7 @@ Use this method to edit captions of messages. On success, if edited message is s
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "editMessageCaption" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'EDIT-MESSAGE-CAPTION)
 
 (DEFUN EDIT-MESSAGE-MEDIA
        (MEDIA &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
@@ -1713,6 +1797,7 @@ Use this method to edit animation, audio, document, photo, or video messages. If
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "editMessageMedia" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'EDIT-MESSAGE-MEDIA)
 
 (DEFUN EDIT-MESSAGE-REPLY-MARKUP
        (&KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID REPLY--MARKUP)
@@ -1730,6 +1815,7 @@ Use this method to edit only the reply markup of messages. On success, if edited
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "editMessageReplyMarkup" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'EDIT-MESSAGE-REPLY-MARKUP)
 
 (DEFUN STOP-POLL (CHAT--ID MESSAGE--ID &KEY REPLY--MARKUP)
   "https://core.telegram.org/bots/api#stoppoll
@@ -1741,6 +1827,7 @@ Use this method to stop a poll which was sent by the bot. On success, the stoppe
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "stopPoll" OPTIONS :RETURN-TYPE '*POLL)))
+(EXPORT 'STOP-POLL)
 
 (DEFUN DELETE-MESSAGE (CHAT--ID MESSAGE--ID)
   "https://core.telegram.org/bots/api#deletemessage
@@ -1750,6 +1837,7 @@ Use this method to delete a message, including service messages, with the follow
   (LET ((OPTIONS
          (LIST (CONS :CHAT_ID CHAT--ID) (CONS :MESSAGE_ID MESSAGE--ID))))
     (LIST "deleteMessage" OPTIONS)))
+(EXPORT 'DELETE-MESSAGE)
 
 
 ;----Stickers----
@@ -1778,6 +1866,7 @@ Use this method to delete a message, including service messages, with the follow
             INTEGER :DOCUMENTATION "File size"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#sticker
 This object represents a sticker."))
+(EXPORT '*STICKER)
 
 (DEFCLASS *STICKER-SET NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "StickerSet")
@@ -1795,6 +1884,7 @@ This object represents a sticker."))
             :TYPE (ARRAY *STICKER) :DOCUMENTATION "List of all set stickers"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#stickerset
 This object represents a sticker set."))
+(EXPORT '*STICKER-SET)
 
 (DEFCLASS *MASK-POSITION NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "MaskPosition")
@@ -1812,6 +1902,7 @@ This object represents a sticker set."))
             "Mask scaling coefficient. For example, 2.0 means double size."))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#maskposition
 This object describes the position on faces where a mask should be placed by default."))
+(EXPORT '*MASK-POSITION)
 
 (DEFUN SEND-STICKER
        (CHAT--ID STICKER
@@ -1834,6 +1925,7 @@ Use this method to send static .WEBP or animated .TGS stickers. On success, the 
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendSticker" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-STICKER)
 
 (DEFUN GET-STICKER-SET (NAME)
   "https://core.telegram.org/bots/api#getstickerset
@@ -1841,6 +1933,7 @@ Use this method to get a sticker set. On success, a StickerSet object is returne
   (CHECK-TYPE NAME STRING)
   (LET ((OPTIONS (LIST (CONS :NAME NAME))))
     (LIST "getStickerSet" OPTIONS :RETURN-TYPE '*STICKER-SET)))
+(EXPORT 'GET-STICKER-SET)
 
 (DEFUN UPLOAD-STICKER-FILE (USER--ID PNG--STICKER)
   "https://core.telegram.org/bots/api#uploadstickerfile
@@ -1850,6 +1943,7 @@ Use this method to upload a .png file with a sticker for later use in createNewS
   (LET ((OPTIONS
          (LIST (CONS :USER_ID USER--ID) (CONS :PNG_STICKER PNG--STICKER))))
     (LIST "uploadStickerFile" OPTIONS :RETURN-TYPE '*FILE)))
+(EXPORT 'UPLOAD-STICKER-FILE)
 
 (DEFUN CREATE-NEW-STICKER-SET
        (USER--ID NAME TITLE PNG--STICKER EMOJIS
@@ -1871,6 +1965,7 @@ Use this method to create new sticker set owned by a user. The bot will be able 
       (SETF OPTIONS
               (NCONC OPTIONS (LIST (CONS :MASK_POSITION MASK--POSITION)))))
     (LIST "createNewStickerSet" OPTIONS)))
+(EXPORT 'CREATE-NEW-STICKER-SET)
 
 (DEFUN ADD-STICKER-TO-SET
        (USER--ID NAME PNG--STICKER EMOJIS &KEY MASK--POSITION)
@@ -1887,6 +1982,7 @@ Use this method to add a new sticker to a set created by the bot. Returns True o
       (SETF OPTIONS
               (NCONC OPTIONS (LIST (CONS :MASK_POSITION MASK--POSITION)))))
     (LIST "addStickerToSet" OPTIONS)))
+(EXPORT 'ADD-STICKER-TO-SET)
 
 (DEFUN SET-STICKER-POSITION-IN-SET (STICKER POSITION)
   "https://core.telegram.org/bots/api#setstickerpositioninset
@@ -1895,6 +1991,7 @@ Use this method to move a sticker in a set created by the bot to a specific posi
   (CHECK-TYPE POSITION INTEGER)
   (LET ((OPTIONS (LIST (CONS :STICKER STICKER) (CONS :POSITION POSITION))))
     (LIST "setStickerPositionInSet" OPTIONS)))
+(EXPORT 'SET-STICKER-POSITION-IN-SET)
 
 (DEFUN DELETE-STICKER-FROM-SET (STICKER)
   "https://core.telegram.org/bots/api#deletestickerfromset
@@ -1902,6 +1999,7 @@ Use this method to delete a sticker from a set created by the bot. Returns True 
   (CHECK-TYPE STICKER STRING)
   (LET ((OPTIONS (LIST (CONS :STICKER STICKER))))
     (LIST "deleteStickerFromSet" OPTIONS)))
+(EXPORT 'DELETE-STICKER-FROM-SET)
 
 
 ;----Inline mode----
@@ -1921,6 +2019,7 @@ Use this method to delete a sticker from a set created by the bot. Returns True 
             "Offset of the results to be returned, can be controlled by the bot"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#inlinequery
 This object represents an incoming inline query. When the user sends an empty query, your bot could return some default or trending results."))
+(EXPORT '*INLINE-QUERY)
 
 (DEFUN ANSWER-INLINE-QUERY
        (INLINE--QUERY--ID RESULTS
@@ -1948,12 +2047,14 @@ Use this method to send answers to an inline query. On success, True is returned
                      (LIST
                       (CONS :SWITCH_PM_PARAMETER SWITCH--PM--PARAMETER)))))
     (LIST "answerInlineQuery" OPTIONS)))
+(EXPORT 'ANSWER-INLINE-QUERY)
 
 (DEFUN *INLINE-QUERY-RESULT ()
   "https://core.telegram.org/bots/api#inlinequeryresult
 This object represents one result of an inline query. Telegram clients currently support results of the following 20 types:"
   (LET ((OPTIONS (LIST)))
     (LIST "InlineQueryResult" OPTIONS)))
+(EXPORT '*INLINE-QUERY-RESULT)
 
 (DEFCLASS *INLINE-QUERY-RESULT-ARTICLE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -1987,6 +2088,7 @@ This object represents one result of an inline query. Telegram clients currently
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultarticle
 Represents a link to an article or web page."))
+(EXPORT '*INLINE-QUERY-RESULT-ARTICLE)
 
 (DEFCLASS *INLINE-QUERY-RESULT-PHOTO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2025,6 +2127,7 @@ Represents a link to an article or web page."))
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultphoto
 Represents a link to a photo. By default, this photo will be sent by the user with optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the photo."))
+(EXPORT '*INLINE-QUERY-RESULT-PHOTO)
 
 (DEFCLASS *INLINE-QUERY-RESULT-GIF NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2063,6 +2166,7 @@ Represents a link to a photo. By default, this photo will be sent by the user wi
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultgif
 Represents a link to an animated GIF file. By default, this animated GIF file will be sent by the user with optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the animation."))
+(EXPORT '*INLINE-QUERY-RESULT-GIF)
 
 (DEFCLASS *INLINE-QUERY-RESULT-MPEG-4-*GIF NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2101,6 +2205,7 @@ Represents a link to an animated GIF file. By default, this animated GIF file wi
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultmpeg4gif
 Represents a link to a video animation (H.264/MPEG-4 AVC video without sound). By default, this animated MPEG-4 file will be sent by the user with optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the animation."))
+(EXPORT '*INLINE-QUERY-RESULT-MPEG-4-*GIF)
 
 (DEFCLASS *INLINE-QUERY-RESULT-VIDEO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2145,6 +2250,7 @@ Represents a link to a video animation (H.264/MPEG-4 AVC video without sound). B
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultvideo
 Represents a link to a page containing an embedded video player or a video file. By default, this video file will be sent by the user with an optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the video."))
+(EXPORT '*INLINE-QUERY-RESULT-VIDEO)
 
 (DEFCLASS *INLINE-QUERY-RESULT-AUDIO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2178,6 +2284,7 @@ Represents a link to a page containing an embedded video player or a video file.
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultaudio
 Represents a link to an mp3 audio file. By default, this audio file will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the audio."))
+(EXPORT '*INLINE-QUERY-RESULT-AUDIO)
 
 (DEFCLASS *INLINE-QUERY-RESULT-VOICE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2209,6 +2316,7 @@ Represents a link to an mp3 audio file. By default, this audio file will be sent
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultvoice
 Represents a link to a voice recording in an .ogg container encoded with OPUS. By default, this voice recording will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the the voice message."))
+(EXPORT '*INLINE-QUERY-RESULT-VOICE)
 
 (DEFCLASS *INLINE-QUERY-RESULT-DOCUMENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2250,6 +2358,7 @@ Represents a link to a voice recording in an .ogg container encoded with OPUS. B
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultdocument
 Represents a link to a file. By default, this file will be sent by the user with an optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the file. Currently, only .PDF and .ZIP files can be sent using this method."))
+(EXPORT '*INLINE-QUERY-RESULT-DOCUMENT)
 
 (DEFCLASS *INLINE-QUERY-RESULT-LOCATION NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2283,6 +2392,7 @@ Represents a link to a file. By default, this file will be sent by the user with
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultlocation
 Represents a location on a map. By default, the location will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the location."))
+(EXPORT '*INLINE-QUERY-RESULT-LOCATION)
 
 (DEFCLASS *INLINE-QUERY-RESULT-VENUE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2323,6 +2433,7 @@ Represents a location on a map. By default, the location will be sent by the use
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultvenue
 Represents a venue. By default, the venue will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the venue."))
+(EXPORT '*INLINE-QUERY-RESULT-VENUE)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CONTACT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2357,6 +2468,7 @@ Represents a venue. By default, the venue will be sent by the user. Alternativel
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcontact
 Represents a contact with a phone number. By default, this contact will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the contact."))
+(EXPORT '*INLINE-QUERY-RESULT-CONTACT)
 
 (DEFCLASS *INLINE-QUERY-RESULT-GAME NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2374,6 +2486,7 @@ Represents a contact with a phone number. By default, this contact will be sent 
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultgame
 Represents a Game."))
+(EXPORT '*INLINE-QUERY-RESULT-GAME)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-PHOTO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2405,6 +2518,7 @@ Represents a Game."))
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcachedphoto
 Represents a link to a photo stored on the Telegram servers. By default, this photo will be sent by the user with an optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the photo."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-PHOTO)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-GIF NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2434,6 +2548,7 @@ Represents a link to a photo stored on the Telegram servers. By default, this ph
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcachedgif
 Represents a link to an animated GIF file stored on the Telegram servers. By default, this animated GIF file will be sent by the user with an optional caption. Alternatively, you can use input_message_content to send a message with specified content instead of the animation."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-GIF)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-MPEG-4-*GIF NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2463,6 +2578,7 @@ Represents a link to an animated GIF file stored on the Telegram servers. By def
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcachedmpeg4gif
 Represents a link to a video animation (H.264/MPEG-4 AVC video without sound) stored on the Telegram servers. By default, this animated MPEG-4 file will be sent by the user with an optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the animation."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-MPEG-4-*GIF)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-STICKER NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2484,6 +2600,7 @@ Represents a link to a video animation (H.264/MPEG-4 AVC video without sound) st
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcachedsticker
 Represents a link to a sticker stored on the Telegram servers. By default, this sticker will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the sticker."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-STICKER)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-DOCUMENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2515,6 +2632,7 @@ Represents a link to a sticker stored on the Telegram servers. By default, this 
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcacheddocument
 Represents a link to a file stored on the Telegram servers. By default, this file will be sent by the user with an optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the file."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-DOCUMENT)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-VIDEO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2546,6 +2664,7 @@ Represents a link to a file stored on the Telegram servers. By default, this fil
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcachedvideo
 Represents a link to a video file stored on the Telegram servers. By default, this video file will be sent by the user with an optional caption. Alternatively, you can use input_message_content to send a message with the specified content instead of the video."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-VIDEO)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-VOICE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2574,6 +2693,7 @@ Represents a link to a video file stored on the Telegram servers. By default, th
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcachedvoice
 Represents a link to a voice message stored on the Telegram servers. By default, this voice message will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the voice message."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-VOICE)
 
 (DEFCLASS *INLINE-QUERY-RESULT-CACHED-AUDIO NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2600,12 +2720,14 @@ Represents a link to a voice message stored on the Telegram servers. By default,
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inlinequeryresultcachedaudio
 Represents a link to an mp3 audio file stored on the Telegram servers. By default, this audio file will be sent by the user. Alternatively, you can use input_message_content to send a message with the specified content instead of the audio."))
+(EXPORT '*INLINE-QUERY-RESULT-CACHED-AUDIO)
 
 (DEFUN *INPUT-MESSAGE-CONTENT ()
   "https://core.telegram.org/bots/api#inputmessagecontent
 This object represents the content of a message to be sent as a result of an inline query. Telegram clients currently support the following 4 types:"
   (LET ((OPTIONS (LIST)))
     (LIST "InputMessageContent" OPTIONS)))
+(EXPORT '*INPUT-MESSAGE-CONTENT)
 
 (DEFCLASS *INPUT-TEXT-MESSAGE-CONTENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2623,6 +2745,7 @@ This object represents the content of a message to be sent as a result of an inl
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inputtextmessagecontent
 Represents the content of a text message to be sent as the result of an inline query."))
+(EXPORT '*INPUT-TEXT-MESSAGE-CONTENT)
 
 (DEFCLASS *INPUT-LOCATION-MESSAGE-CONTENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2637,6 +2760,7 @@ Represents the content of a text message to be sent as the result of an inline q
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inputlocationmessagecontent
 Represents the content of a location message to be sent as the result of an inline query."))
+(EXPORT '*INPUT-LOCATION-MESSAGE-CONTENT)
 
 (DEFCLASS *INPUT-VENUE-MESSAGE-CONTENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2658,6 +2782,7 @@ Represents the content of a location message to be sent as the result of an inli
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inputvenuemessagecontent
 Represents the content of a venue message to be sent as the result of an inline query."))
+(EXPORT '*INPUT-VENUE-MESSAGE-CONTENT)
 
 (DEFCLASS *INPUT-CONTACT-MESSAGE-CONTENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2675,6 +2800,7 @@ Represents the content of a venue message to be sent as the result of an inline 
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#inputcontactmessagecontent
 Represents the content of a contact message to be sent as the result of an inline query."))
+(EXPORT '*INPUT-CONTACT-MESSAGE-CONTENT)
 
 (DEFCLASS *CHOSEN-INLINE-RESULT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2694,6 +2820,7 @@ Represents the content of a contact message to be sent as the result of an inlin
             :DOCUMENTATION "The query that was used to obtain the result"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#choseninlineresult
 Represents a result of an inline query that was chosen by the user and sent to their chat partner."))
+(EXPORT '*CHOSEN-INLINE-RESULT)
 
 
 ;----Telegram Passport----
@@ -2707,6 +2834,7 @@ Represents a result of an inline query that was chosen by the user and sent to t
             "Encrypted credentials required to decrypt the data"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#passportdata
 Contains information about Telegram Passport data shared with the bot by the user."))
+(EXPORT '*PASSPORT-DATA)
 
 (DEFCLASS *PASSPORT-FILE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "PassportFile")
@@ -2719,6 +2847,7 @@ Contains information about Telegram Passport data shared with the bot by the use
             "Unix time when the file was uploaded"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#passportfile
 This object represents a file uploaded to Telegram Passport. Currently all Telegram Passport files are in JPEG format when decrypted and don't exceed 10MB."))
+(EXPORT '*PASSPORT-FILE)
 
 (DEFCLASS *ENCRYPTED-PASSPORT-ELEMENT NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2755,6 +2884,7 @@ This object represents a file uploaded to Telegram Passport. Currently all Teleg
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#encryptedpassportelement
 Contains information about documents or other Telegram Passport elements shared with the bot by the user."))
+(EXPORT '*ENCRYPTED-PASSPORT-ELEMENT)
 
 (DEFCLASS *ENCRYPTED-CREDENTIALS NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2770,6 +2900,7 @@ Contains information about documents or other Telegram Passport elements shared 
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#encryptedcredentials
 Contains data required for decrypting and authenticating EncryptedPassportElement. See the Telegram Passport Documentation for a complete description of the data decryption and authentication processes."))
+(EXPORT '*ENCRYPTED-CREDENTIALS)
 
 (DEFUN SET-PASSPORT-DATA-ERRORS (USER--ID ERRORS)
   "https://core.telegram.org/bots/api#setpassportdataerrors
@@ -2778,12 +2909,14 @@ Informs a user that some of the Telegram Passport elements they provided contain
   (CHECK-TYPE ERRORS (ARRAY *PASSPORT-ELEMENT-ERROR))
   (LET ((OPTIONS (LIST (CONS :USER_ID USER--ID) (CONS :ERRORS ERRORS))))
     (LIST "setPassportDataErrors" OPTIONS)))
+(EXPORT 'SET-PASSPORT-DATA-ERRORS)
 
 (DEFUN *PASSPORT-ELEMENT-ERROR ()
   "https://core.telegram.org/bots/api#passportelementerror
 This object represents an error in the Telegram Passport element which was submitted that should be resolved by the user. It should be one of:"
   (LET ((OPTIONS (LIST)))
     (LIST "PassportElementError" OPTIONS)))
+(EXPORT '*PASSPORT-ELEMENT-ERROR)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-DATA-FIELD NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2804,6 +2937,7 @@ This object represents an error in the Telegram Passport element which was submi
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrordatafield
 Represents an issue in one of the data fields that was provided by the user. The error is considered resolved when the field's value changes."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-DATA-FIELD)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-FRONT-SIDE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2821,6 +2955,7 @@ Represents an issue in one of the data fields that was provided by the user. The
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrorfrontside
 Represents an issue with the front side of a document. The error is considered resolved when the file with the front side of the document changes."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-FRONT-SIDE)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-REVERSE-SIDE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2838,6 +2973,7 @@ Represents an issue with the front side of a document. The error is considered r
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrorreverseside
 Represents an issue with the reverse side of a document. The error is considered resolved when the file with reverse side of the document changes."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-REVERSE-SIDE)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-SELFIE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2855,6 +2991,7 @@ Represents an issue with the reverse side of a document. The error is considered
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrorselfie
 Represents an issue with the selfie with a document. The error is considered resolved when the file with the selfie changes."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-SELFIE)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-FILE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2872,6 +3009,7 @@ Represents an issue with the selfie with a document. The error is considered res
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrorfile
 Represents an issue with a document scan. The error is considered resolved when the file with the document scan changes."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-FILE)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-FILES NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2889,6 +3027,7 @@ Represents an issue with a document scan. The error is considered resolved when 
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrorfiles
 Represents an issue with a list of scans. The error is considered resolved when the list of files containing the scans changes."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-FILES)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-TRANSLATION-FILE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2906,6 +3045,7 @@ Represents an issue with a list of scans. The error is considered resolved when 
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrortranslationfile
 Represents an issue with one of the files that constitute the translation of a document. The error is considered resolved when the file changes."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-TRANSLATION-FILE)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-TRANSLATION-FILES NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2923,6 +3063,7 @@ Represents an issue with one of the files that constitute the translation of a d
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrortranslationfiles
 Represents an issue with the translated version of a document. The error is considered resolved when a file with the document translation change."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-TRANSLATION-FILES)
 
 (DEFCLASS *PASSPORT-ELEMENT-ERROR-UNSPECIFIED NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -2940,6 +3081,7 @@ Represents an issue with the translated version of a document. The error is cons
           (:DOCUMENTATION
            "https://core.telegram.org/bots/api#passportelementerrorunspecified
 Represents an issue in an unspecified place. The error is considered resolved when new data is added."))
+(EXPORT '*PASSPORT-ELEMENT-ERROR-UNSPECIFIED)
 
 
 ;----Games----
@@ -2966,6 +3108,7 @@ Use this method to send a game. On success, the sent Message is returned."
     (WHEN REPLY--MARKUP
       (SETF OPTIONS (NCONC OPTIONS (LIST (CONS :REPLY_MARKUP REPLY--MARKUP)))))
     (LIST "sendGame" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SEND-GAME)
 
 (DEFCLASS *GAME NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM "Game")
@@ -2987,6 +3130,7 @@ Use this method to send a game. On success, the sent Message is returned."
             "Animation that will be displayed in the game message in chats. Upload via BotFather"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#game
 This object represents a game. Use BotFather to create and edit games, their short names will act as unique identifiers."))
+(EXPORT '*GAME)
 
 (DEFUN SET-GAME-SCORE
        (USER--ID SCORE
@@ -3012,6 +3156,7 @@ Use this method to set the score of the specified user in a game. On success, if
               (NCONC OPTIONS
                      (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
     (LIST "setGameScore" OPTIONS :RETURN-TYPE '*MESSAGE)))
+(EXPORT 'SET-GAME-SCORE)
 
 (DEFUN GET-GAME-HIGH-SCORES
        (USER--ID &KEY CHAT--ID MESSAGE--ID INLINE--MESSAGE--ID)
@@ -3028,6 +3173,7 @@ Use this method to get data for high score tables. Will return the score of the 
               (NCONC OPTIONS
                      (LIST (CONS :INLINE_MESSAGE_ID INLINE--MESSAGE--ID)))))
     (LIST "getGameHighScores" OPTIONS)))
+(EXPORT 'GET-GAME-HIGH-SCORES)
 
 (DEFCLASS *GAME-HIGH-SCORE NIL
           ((TYPE-NAME :ALLOCATION :CLASS :READER NAME :INITFORM
@@ -3041,4 +3187,5 @@ Use this method to get data for high score tables. Will return the score of the 
             INTEGER :DOCUMENTATION "Score"))
           (:DOCUMENTATION "https://core.telegram.org/bots/api#gamehighscore
 This object represents one row of the high scores table for a game."))
+(EXPORT '*GAME-HIGH-SCORE)
 

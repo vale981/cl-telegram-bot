@@ -90,7 +90,7 @@
   seconds. Returns a PROMISE that resolves to either the return value
   of MATCHER. An condition is signaled on timeout."))
 
-(defmethod add-reply-matcher ((bot tg-bot) matcher result &optional timeout)
+(defmethod add-reply-matcher ((bot tg-bot) matcher result timeout)
   (let ((promise (lparallel:promise)))
     (push `(,promise ,matcher ,result ,(when timeout (+ (get-universal-time) timeout)))
           (slot-value bot 'reply-queue))
@@ -164,7 +164,7 @@
 (defun recursive-change-class (object class)
   "Casts and object and its members into the telegram specific classes."
   (when (and (listp class) (> (length class) 1) (eq (car class) 'array))
-    (setf class (second class)))
+    (setf class (second class)))        ; handle arrays
 
   (unless (find class *api-types*)
     (return-from recursive-change-class object))
@@ -177,8 +177,8 @@
 
   (change-class object class)
   (dolist (slot (c2mop:class-slots (find-class class)))
-    (let* ((name (c2mop:slot-definition-name slot))
-           (type (c2mop:slot-definition-type slot)))
+    (let ((name (slot-definition-name slot))
+          (type (slot-definition-type slot)))
       (when (slot-boundp object name)
         (let ((value (slot-value object name)))
           (when value
@@ -232,7 +232,7 @@
 (defgeneric decode (object))
 
 (defmethod decode ((object stream))
-  (let ((json:*json-symbols-package* :cl-telegram-bot))
+  (let ((json:*json-symbols-package* nil))
     (json:with-decoder-simple-clos-semantics
       (prog1
           (json:decode-json object)
