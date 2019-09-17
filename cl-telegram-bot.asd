@@ -3,7 +3,7 @@
   :author "Rei <https://github.com/sovietspaceship>"
   :license "MIT"
   :depends-on (#:cl-json #:alexandria #:closer-mop #:dexador
-  #:lparallel #:trivial-types #:cl-arrows #:bordeaux-threads)
+  #:lparallel #:trivial-types #:cl-arrows #:bordeaux-threads #:log4cl)
   :serial t
   :components ((:file "package")
                (:file "API")

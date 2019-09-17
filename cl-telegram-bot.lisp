@@ -79,8 +79,10 @@
           file-endpoint (concatenate 'string api-uri "file/" "bot" token "/"))))
 
 (define-condition reply-matcher-timeout-error (error)
-  ()
-  (:documentation "Gets signalled if a reply doesn't arive in time."))
+  ((timeout :initarg :timeout :reader timeout))
+  (:report (lambda (condition stream) (format stream "Timed out while
+  waiting for a reply. Timeout was ~a." (timeout condition)))
+   :documentation "Gets signalled if a reply doesn't arive in time."))
 
 (defgeneric add-reply-matcher (bot matcher result timeout)
   (:documentation "Adds a reply matcher function to BOT that takes an
@@ -133,17 +135,19 @@
 
 ;; TODO: make slimm with functions
 (defmethod process-updates ((bot tg-bot) updates)
+  (log:debug "Processing updates: " updates)
+  (log:debug updates)
   (with-slots (reply-queue update-hooks) bot
     (let ((unresolved nil)) ;; Process reply-matchers
       (loop for update across updates do
         (dolist (matcher-list reply-queue)
-          (destructuring-bind (promise matcher result timeout) matcher-list
+          (destructuring-bind (promise matcher result timeout) matcher-list ; TODO: use struct
             (let ((reply (apply matcher (list update result))))
               (if (or (not timeout) (> timeout (get-universal-time)))
                   (if reply
                       (lparallel:fulfill promise reply)
                       (push matcher-list unresolved))
-                  (restart-case (error 'reply-matcher-timeout-error)
+                  (restart-case (error 'reply-matcher-timeout-error :timeout timeout)
                     (remove-handler () nil)
                     (reset-timeout (new-timeout)
                       :interactive read-new-timeout
@@ -232,14 +236,14 @@
 (defgeneric decode (object))
 
 (defmethod decode ((object stream))
-  (let ((json:*json-symbols-package* nil))
+  (let ((json:*json-symbols-package* :cl-telegram-bot))
     (json:with-decoder-simple-clos-semantics
       (prog1
           (json:decode-json object)
         (close object)))))
 
 (defmethod decode ((object string))
-  (let ((json:*json-symbols-package* nil))
+  (let ((json:*json-symbols-package* :cl-telegram-bot))
     (json:with-decoder-simple-clos-semantics
       (with-input-from-string (stream object)
         (json:decode-json stream)))))
