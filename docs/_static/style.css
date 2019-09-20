@@ -1,0 +1,10 @@
+.text-muted {
+    color: black;
+    font-style: normal;
+}
+
+
+.property {
+    font-style: normal;
+    font-family: 'Consolas', 'Menlo', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+}

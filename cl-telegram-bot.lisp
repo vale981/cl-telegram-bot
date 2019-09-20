@@ -65,6 +65,10 @@
    (reply-queue
     :type (proper-list function)
     :documentation "A queue for storing reply matchers."
+    :initform nil)
+   (commands
+    :type (proper-list (proper-list))
+    :documentation "A list to store commands as (command-regex callback separator)."
     :initform nil))
   (:documentation "The TG-BOT type is just a basic data container to
   hold various transactional data. It does not feature polling or any
@@ -77,6 +81,58 @@
                    (api-uri       api-uri)) object
     (setf endpoint      (concatenate 'string api-uri "bot" token "/")
           file-endpoint (concatenate 'string api-uri "file/" "bot" token "/"))))
+
+(defun make-tg-bot (token &optional api-url)
+  "Create a new TG-BOT instance. Takes a TOKEN string and optionally an API-URL string."
+  (let ((args (if api-url
+                  `(:token ,token :api-url api-url)
+                  `(:token ,token))))
+    (apply #'make-instance `(tg-bot ,@args))))
+
+(defgeneric decode (object))
+
+(defmethod decode ((object stream))
+  (let ((json:*json-symbols-package* :cl-telegram-bot))
+    (json:with-decoder-simple-clos-semantics
+      (prog1
+          (json:decode-json object)
+        (close object)))))
+
+(defmethod decode ((object string))
+  (let ((json:*json-symbols-package* :cl-telegram-bot))
+    (json:with-decoder-simple-clos-semantics
+      (with-input-from-string (stream object)
+        (json:decode-json stream)))))
+
+(defmethod decode ((object vector))
+  (decode (map 'string #'code-char object)))
+
+(define-condition request-error (error)
+  ((what :initarg :what :reader what))
+  (:report (lambda (condition stream)
+             (format stream "Request error: ~A" (what condition)))))
+
+(defun make-request (b name options &key (return-type nil) (timeout 10))
+  "Perform HTTP request to NAME API method with OPTIONS JSON-encoded object."
+  (let* ((results (multiple-value-list
+                   (handler-bind ((dex:http-request-bad-request #'dex:ignore-and-continue))
+                     (dex:request
+                      (concatenate 'string (endpoint b) name)
+                      :method :post
+                      :want-stream t
+                      :headers '(("Content-Type" . "Application/Json"))
+                      :timeout timeout
+                      :content (json:encode-json-alist-to-string options)))))
+         (message (nth 0 results)))
+
+    (with-slots (ok result description) (decode message)
+      (if ok
+          (if return-type ; wether to cast into a known custom class or not
+              (recursive-change-class result return-type)
+              result)
+          (error 'request-error :what description)))))
+
+;;; Reply Matchers
 
 (define-condition reply-matcher-timeout-error (error)
   ((timeout :initarg :timeout :reader timeout))
@@ -92,16 +148,24 @@
   seconds. Returns a PROMISE that resolves to either the return value
   of MATCHER. An condition is signaled on timeout."))
 
+(defmethod add-reply-matcher :before (bot matcher result timeout)
+  (log:debug "Adding reply watcher: " (list bot matcher result timeout)))
+
 (defmethod add-reply-matcher ((bot tg-bot) matcher result timeout)
   (let ((promise (lparallel:promise)))
     (push `(,promise ,matcher ,result ,(when timeout (+ (get-universal-time) timeout)))
           (slot-value bot 'reply-queue))
     promise))
 
+;;; Update Hooks
+
 (defgeneric add-update-hook (bot hook &optional key)
   (:documentation "Adds an update hook that will be called with an
   *UPDATE object on each update, the return value is ignored. Returns
   a keyword to remove that hook."))
+
+(defmethod add-update-hook :before (bot hook &optional key)
+  (log:debug "Adding reply watcher: " (list bot hook key)))
 
 (defmethod add-update-hook ((bot tg-bot) hook &optional key)
   (let ((final-key (if key key (gensym))))
@@ -115,6 +179,9 @@
   (:documentation "Removes an update hook by its key which was
   returned open its registration. Returns t (success) or nil."))
 
+(defmethod remove-update-hook :before (bot key)
+  (log:debug "Adding reply watcher: " (list bot key)))
+
 (defmethod remove-update-hook ((bot tg-bot) key)
   (with-slots (update-hooks) bot
     (let ((pos (position key update-hooks :key #'car)))
@@ -122,22 +189,25 @@
         (setf update-hooks (nconc (subseq update-hooks 0 pos) (nthcdr (1+ pos) update-hooks))))
       pos)))
 
+;;; Process Updates
+
 (defgeneric process-updates (bot updates)
   (:documentation "Processes the updates fetched by FETCH-UPDATES to detect commands and replies."))
 
 ;; check types before
+
 (defmethod process-updates :before (bot updates)
-  (declare (type (vector *update) updates)))
+  (declare (type (vector *update) updates))
+  (log:debug "Processing ~a update(s)." (length updates)))
 
 (defun read-new-timeout ()
    (format t "Enter a new timeout: ")
    (multiple-value-list (eval (read))))
 
-;; TODO: make slimm with functions
+;; TODO: make slimer with functions
 (defmethod process-updates ((bot tg-bot) updates)
-  (log:debug "Processing updates: " updates)
-  (log:debug updates)
-  (with-slots (reply-queue update-hooks) bot
+  (break)
+  (with-slots (reply-queue update-hooks commands) bot
     (let ((unresolved nil)) ;; Process reply-matchers
       (loop for update across updates do
         (dolist (matcher-list reply-queue)
@@ -154,16 +224,22 @@
                       (progn
                         (setf (fourth matcher-list) (+ (get-universal-time) new-timeout))
                         (push matcher-list unresolved))))))))
+        (dolist (command commands)
+          (when (slot-boundp update 'message)
+            (destructuring-bind (regex callback sep) command
+              (let ((message (tg-message update)))
+                (when (eq (elt message 0) #\\)
+                  (let* ((space (position #\Space message))
+                         (command (subseq message 0 space))))
+                  (when (ppcre:scan regex command)
+                    (let ((arg-string (subseq message (1+ space)))
+                          (args (if sep
+                                    (ppcre:split sep arg-string)
+                                    arg-string)))
+                      (funcall callback args message))))))))
         (dolist (hook update-hooks)     ; process hooks
           (funcall (cdr hook) updates)))
       (setf reply-queue unresolved))))
-
-(defun make-tg-bot (token &optional api-url)
-  "Create a new TG-BOT instance. Takes a TOKEN string and optionally an API-URL string."
-  (let ((args (if api-url
-                  `(:token ,token :api-url api-url)
-                  `(:token ,token))))
-    (apply #'make-instance `(tg-bot ,@args))))
 
 (defun recursive-change-class (object class)
   "Casts and object and its members into the telegram specific classes."
@@ -190,99 +266,8 @@
   object)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                        ;               HELPERS               ;
+                                        ;        CONVENIENCE INTERFACE        ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun make-request (b name options &key (return-type nil) (timeout 10))
-  "Perform HTTP request to NAME API method with OPTIONS JSON-encoded object."
-  (let* ((results (multiple-value-list
-                   (handler-bind ((dex:http-request-bad-request #'dex:ignore-and-continue))
-                     (dex:request
-                      (concatenate 'string (endpoint b) name)
-                      :method :post
-                      :want-stream t
-                      :headers '(("Content-Type" . "Application/Json"))
-                      :timeout timeout
-                      :content (json:encode-json-alist-to-string options)))))
-         (message (nth 0 results)))
-
-    (with-slots (ok result description) (decode message)
-      (if ok
-          (if return-type ; wether to cast into a known custom class or not
-              (recursive-change-class result return-type)
-              result)
-          (error 'request-error :what description)))))
-
-(defun access (update &rest args)
-  "Access update field. update.first.second. ... => (access update 'first 'second ...). Nil if unbound."
-  (unless update
-    (return-from access nil))
-  (let ((current update))
-    (dolist (r args)
-      (unless (slot-boundp current r)
-        (return-from access nil))
-      (setf current (slot-value current r)))
-    current))
-
-(defun get-slot (update slot)
-  "Access slot. Since fluid classes signal error on unbound slot access, this instead returns nil."
-  (if (slot-boundp update slot)
-      (slot-value update slot)
-    nil))
-
-(defmacro with-package (package &rest body)
-  `(let ((json:*json-symbols-package* ,package)) ,@body))
-
-(defgeneric decode (object))
-
-(defmethod decode ((object stream))
-  (let ((json:*json-symbols-package* :cl-telegram-bot))
-    (json:with-decoder-simple-clos-semantics
-      (prog1
-          (json:decode-json object)
-        (close object)))))
-
-(defmethod decode ((object string))
-  (let ((json:*json-symbols-package* :cl-telegram-bot))
-    (json:with-decoder-simple-clos-semantics
-      (with-input-from-string (stream object)
-        (json:decode-json stream)))))
-
-(defmethod decode ((object vector))
-  (decode (map 'string #'code-char object)))
-
-(define-condition request-error (error)
-  ((what :initarg :what :reader what))
-  (:report (lambda (condition stream)
-             (format stream "Request error: ~A" (what condition)))))
-
-(defmacro find-json-symbol (sym)
-  `(find-symbol (symbol-name ,sym) json:*json-symbols-package*))
-
-
-(defun download-file (b file-id)
-  "Get the  path for a  file from a  file-id (see: get-file)  and then
-   download it.  Returns nil if the value of the http response code is
-   not  success (200);  otherwise it  will returns  three values:  the
-   data, the http headers and the exension of the original file"
-  (with-package :cl-telegram-bot
-                (let* ((file-spec (decode (get-file b file-id))))
-                  (with-ok-results (file-spec results)
-                                   (alexandria:when-let* ((path      (access results 'file--path))
-                                               (uri       (concatenate 'string (file-endpoint b) path))
-                                               (extension (cl-ppcre:scan-to-strings "\\..*$" path)))
-                                              (multiple-value-bind (body code headers)
-                                                  (dex:get uri)
-                                                (when (= code +http-ok+)
-                                                  (values body headers extension))))))))
-
-;; Telegram API methods, see https://core.telegram.org/bots/api
-
-(defmacro with-ok-results ((unserialized results) &body body)
-  `(let ((,results (slot-value ,unserialized (find-json-symbol :result))))
-     (if (slot-value ,unserialized (find-json-symbol :ok))
-         (progn ,@body)
-       nil)))
 
 (defun get-latest-update-id (updates)
   "Finds the latest update id from a sequence of updates."
@@ -306,10 +291,6 @@
     (when (> (length results) 0)
       (process-updates b results))
     results))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                        ;        CONVENIENCE INTERFACE        ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmacro wrap-$ (&rest body)
   "Wraps all forms following (:INLINE [$|$*] ...) into ([$|$*] ...)$."
@@ -358,6 +339,29 @@
                           `(add-reply-matcher ,bot ,matcher ,return-val-sym ,timeout)))))))
       ,(make-optional-body body return-var return-val-sym))))
 
+(defgeneric add-command (bot name-regex callback &optional sep)
+  (:documentation "Adds a chat command and calls CALLBACK with a list
+  of arguments and the corresponding *MESSAGE object if NAME-REGEX (a
+  string) matches the command text (without /). The Arguments to the
+  command are split along SEP (per default no splitting)."))
+
+(defmethod add-command :before (bot name-regex callback &optional sep)
+  (log:debug "Adding command: " (list bot name-regex callback sep)))
+
+(defmethod add-command ((bot tg-bot) name-regex callback &optional sep)
+  (let ((name-regex (ppcre:create-scanner name-regex)))
+    (push (list name-regex callback sep) (slot-value bot 'commands))))
+
+(defmacro definecommand ((bot name-regex &key error-message (sep nil))
+                         argument-lambda-list &body body)
+  (let ((args (gensym))
+        (message (gensym)))
+    `(add-command ,bot ,name-regex
+                  #'(lambda (,args ,message)
+                      (declare (ignore ,message))
+                      (handler-bind ((error #'(lambda (e) (log:error "Invalid args ~a" args))))
+                        (destructuring-bind ,argument-lambda-list args ,@body)))
+                  sep)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                         ;         Convenience Wrappers        ;
